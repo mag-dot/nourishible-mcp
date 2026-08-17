@@ -1,0 +1,31 @@
+{
+  "name": "nourishible-mcp",
+  "version": "0.1.0",
+  "description": "MCP server exposing a signed-in user's nourishible recipe library as tools (save/list/get/delete) for Claude and other MCP clients. Auth via the backend's OAuth2/PKCE server.",
+  "type": "module",
+  "bin": {
+    "nourishible-mcp": "dist/cli.js"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "login": "tsx src/cli.ts login",
+    "logout": "tsx src/cli.ts logout",
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "dotenv": "^17.4.2",
+    "open": "^11.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}
