@@ -6,10 +6,11 @@ Desktop, Cursor, or any other MCP-capable coding agent — and save them straigh
 watch, structure the recipe), so it's free and uncapped: no extraction quota, because it
 never touches nourishible's own compute.
 
+This repo tracks the **current, latest version only** — no archived/legacy copies. History
+lives in git; the working tree is always what you should install today.
+
 **Status: early — this repo was just created.** The `skills/recipe-nourishible/` skill
-(the actively maintained one) and a local MCP client fallback are being built now. In the
-meantime, see [`archive/`](./archive) for the two skills this one is being built from —
-not maintained, kept for provenance only, don't install them.
+(the actively maintained one) and a local MCP client fallback are being built now.
 
 ## What's coming
 
@@ -25,5 +26,4 @@ not maintained, kept for provenance only, don't install them.
 
 ## License
 
-MIT, except `archive/` — see that folder's own README for the original authorship/license
-of what's archived there.
+MIT.

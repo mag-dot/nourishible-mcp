@@ -22,7 +22,7 @@ SOFTWARE.
 
 ---
 
-This license applies to this repository's own code. The `archive/` folder
-contains historical copies of third-party and internal skills kept for
-provenance — see archive/README.md for their original authorship and license
-terms, which are unchanged from the source.
+`skills/recipe-nourishible/` vendors video download/frame/transcript scripts
+originally from the MIT-licensed `/watch` skill by bradautomates
+(https://github.com/bradautomates/claude-video) — see that skill's own
+license/attribution notice, carried forward in the vendored copy.
