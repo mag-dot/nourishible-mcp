@@ -22,7 +22,13 @@ SOFTWARE.
 
 ---
 
-`skills/recipe-nourishible/` vendors video download/frame/transcript scripts
-originally from the MIT-licensed `/watch` skill by bradautomates
-(https://github.com/bradautomates/claude-video) — see that skill's own
-license/attribution notice, carried forward in the vendored copy.
+`skills/recipe-nourishible/` vendors two things with their own history:
+
+- Video download/frame/transcript scripts (`scripts/*.py`, excluding `capture/`)
+  originally from the MIT-licensed `/watch` skill by bradautomates
+  (https://github.com/bradautomates/claude-video) — see that skill's own
+  license/attribution notice, carried forward in the vendored copy.
+- The Instagram screen-capture pipeline (`scripts/capture/`) originally from `ig-saved`,
+  an earlier project by the same team as this repo. See `skills/recipe-nourishible/
+  SKILL.md`'s Attribution section and `docs/capture/CONTRACT.md` for the acquisition rule
+  that pipeline exists to satisfy.
