@@ -497,6 +497,16 @@ visible, dominated by a hand/utensil obscuring the food, transition frames (mid-
 part-black), or where text/graphics cover a substantial part of the dish itself (a short
 caption along the bottom edge is fine, a title card plastered across the food is not).
 
+**Check your #1 pick's actual pixel width before moving on** — `identify` (ImageMagick) or
+`python3 -c "from PIL import Image; print(Image.open('<path>').size)"` on the frame file.
+Composition can look right in a downscaled preview and still be a soft, blurry image once
+it's the full-size card/OG thumbnail everyone sees — Step 1's `--resolution 1024` should
+already guarantee this, but nothing enforces that flag was actually honored (a re-run
+without it, a caller-supplied `--out-dir` pointed at frames from an older invocation, etc.).
+**Reject anything under 512px wide** and re-extract at `--resolution 1024` before picking
+again — don't persist a low-res frame just because it's the best-composed one available; a
+sharper second-best composition beats a soft #1.
+
 Record your #1 pick's frame path — that's the one to persist as the recipe's thumbnail in
 Step 6.5 below. Note the #2 and #3 picks in your summary to the user even though there's
 nowhere in the schema to persist them yet.
