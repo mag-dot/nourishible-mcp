@@ -568,6 +568,14 @@ second place for it to drift out of sync and break.
    with no thumbnail in the library.
 4. Read back the tool's response for the real `id`/`slug` nourishible assigned, and use
    that (not anything you invented) in your Step 6 summary to the user.
+5. **If the response includes a `safety` field** (nourishible computes this server-side
+   for recipes that read as baby/infant food — you don't need to do anything to trigger
+   it), relay its `flags` plainly in your Step 6 summary: each flag's `message`, verbatim.
+   This is deterministic, cited guidance the server computed, not your own judgment — don't
+   add to it, soften it, or decide it doesn't apply. Never phrase the *absence* of a
+   `safety` field as "this is safe for babies" — nourishible didn't check every possible
+   hazard, only 14 specifically cited ones, and a recipe that doesn't read as baby food at
+   all is never checked in the first place.
 
 ## Step 7 — clean up
 
