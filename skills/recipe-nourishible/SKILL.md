@@ -81,15 +81,15 @@ Branch on two fields:
      writes the template when the file is absent, so let it create the file *before* you
      write any values into it). This path name is inherited from the vendored script — see
      Attribution — not a typo; it's an internal config location, not user-facing.
-  3. Encourage a Whisper API key and ask the preference question below, then write the
-     selected values into `~/.config/watch/.env` and set `SETUP_COMPLETE=true`.
+  3. Write the tested defaults below into `~/.config/watch/.env` and set
+     `SETUP_COMPLETE=true`. No questions — see "First-run defaults" below.
 - **`can_proceed: false` and `first_run: false`** → setup was finished before but the
   environment regressed (e.g. `missing_binaries` after an OS change). Run the installer to
   remediate, then proceed. Don't re-ask preferences.
 
-A missing Whisper key is *encouraged to fix, not required*: on a genuine first run `status`
-will read `needs_key` even when binaries are present — that's your cue to encourage a key,
-not a blocker.
+A missing Whisper key is *fine, not a blocker*: on a genuine first run `status` will read
+`needs_key` even when binaries are present — that's expected, not something to fix or ask
+about (see below).
 
 On follow-up invocations in the same session, use the silent check:
 
@@ -106,8 +106,8 @@ On non-zero exit, follow the table:
 | Exit | Meaning | Action |
 |------|---------|--------|
 | `2` | Missing binaries (`ffmpeg` / `ffprobe` / `yt-dlp`) | Run installer |
-| `3` | Genuine first run with no Whisper API key | Run installer to scaffold `.env`, then encourage a key (the user may decline — proceed with `--no-whisper`) |
-| `4` | Both missing | Run installer, then encourage a key |
+| `3` | Genuine first run with no Whisper API key | Run installer to scaffold `.env`, write the defaults below, proceed with `--no-whisper` |
+| `4` | Both missing | Run installer, write the defaults below, proceed with `--no-whisper` |
 
 The installer is idempotent — safe to re-run:
 
@@ -119,31 +119,28 @@ On macOS with Homebrew, it auto-installs `ffmpeg` and `yt-dlp`. On Linux/Windows
 the exact install commands for the user to run. It scaffolds `~/.config/watch/.env` with
 commented placeholders and default settings at `0600` perms.
 
-**If an API key is still missing after install:** use `AskUserQuestion` to ask the user
-whether they have a Groq API key (preferred — cheaper, faster) or an OpenAI key. Then write
-it into `~/.config/watch/.env` — set `GROQ_API_KEY=...` or `OPENAI_API_KEY=...`. If they
-don't want to set up Whisper, proceed with `--no-whisper`; videos without native captions
-will come back frames-only.
+### First-run defaults (no questions asked)
 
-**First-run detail preference:** after the installer has scaffolded `~/.config/watch/.env`,
-use `AskUserQuestion` to ask one question — default detail (one dial), presented in this
-exact order, lightest to heaviest, with `(recommended)` on `balanced` even though it isn't
-first:
+Both preferences below are tested defaults, not things to ask the user about — first-run
+setup should complete with zero `AskUserQuestion` calls.
 
-- `transcript` — no frames at all, transcript only (skips video download when captions exist).
-- `efficient` — fast keyframe pass (cap 50).
-- `balanced` (recommended) — scene-aware frames (cap 100, default).
-- `token-burner` — scene-aware, uncapped (maximum fidelity; high token cost).
+**API key:** if one is still missing after install, don't ask. Proceed with `--no-whisper`
+silently (videos without native captions come back frames-only). A user who wants Whisper
+can add `GROQ_API_KEY=...` (preferred — cheaper, faster) or `OPENAI_API_KEY=...` to
+`~/.config/watch/.env` themselves at any time.
 
-Write the answer directly into `~/.config/watch/.env` on its own line, **no trailing inline
-comment**:
+**Detail:** write the default directly into `~/.config/watch/.env` on its own line, **no
+trailing inline comment**:
 
 ```bash
 WATCH_DETAIL=balanced
 ```
 
-Once dependencies, the API-key choice, and this preference are handled, write or update
-`SETUP_COMPLETE=true` in the same file. Don't ask this again once it's set.
+(`balanced` — scene-aware frames, cap 100 — is the right starting point for most recipe
+Shorts; see the `--detail` flag docs below if a user later wants to change it by hand.)
+
+Once dependencies are confirmed and the line above is written, write or update
+`SETUP_COMPLETE=true` in the same file. Don't revisit either default once it's set.
 
 ## When to use
 
@@ -670,8 +667,8 @@ re-extract or adjust, leave it.
 ## Failure modes and handling
 
 - **Setup preflight failed (YouTube)** → run `python3 "${SKILL_DIR}/scripts/setup.py"`
-  (auto-installs ffmpeg/yt-dlp via brew on macOS, scaffolds the `.env`). For API key, ask
-  via `AskUserQuestion` and write it to `~/.config/watch/.env`.
+  (auto-installs ffmpeg/yt-dlp via brew on macOS, scaffolds the `.env`). Don't ask about
+  the API key — same first-run defaults as Step 0 (proceed with `--no-whisper`).
 - **No transcript available (YouTube)** → captions missing AND (no Whisper key OR Whisper
   API failed). Proceed frames-only and tell the user.
 - **Download fails (YouTube)** → yt-dlp's error goes to stderr. If it's a login-required or

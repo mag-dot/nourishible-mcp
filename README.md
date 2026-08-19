@@ -66,10 +66,10 @@ Claude Code plugin bundling the skill *and* the MCP connection.
 /plugin install nourishible@nourishible-mcp
 ```
 
-Either way, the MCP connection is registered immediately and you complete the OAuth
-sign-in (your agent pops your browser, you approve) the first time it actually tries to
-save something — that part can't be skipped, it's what ties the connection to *your*
-account. Everything else — extraction, structuring, saving — just works after that.
+Either way, the MCP connection is registered immediately, and the install itself finishes
+the OAuth sign-in (your agent pops your browser, you approve) rather than leaving it for
+later — that part can't be skipped, it's what ties the connection to *your* account.
+Everything else — extraction, structuring, saving — just works after that.
 
 Then paste a recipe video/note link and ask your agent to save it.
 
