@@ -26,35 +26,52 @@ Two pieces, each doing one job:
   it's done — no separate CLI step, nothing to clone or run yourself. Read tools cover
   every user's public recipes; write tools are scoped to your own account.
 
+[`SKILL.md`](./SKILL.md) at the repo root is a published, byte-identical copy of the
+skill's instructions (`skills/recipe-nourishible/SKILL.md`), so an agent can fetch them
+from `raw.githubusercontent.com/mag-dot/nourishible-mcp/main/SKILL.md` without cloning.
+Edit the one inside the skill directory; `scripts/build-skill.sh` fails the build if the
+two drift apart.
+
 The skill calls the MCP server's tools to save what it extracted — it doesn't (and can't)
 write to the database on its own. You need both connected for a recipe to actually land in
-your library. For Claude Code, this repo is packaged as a single plugin
-([`.claude-plugin/`](./.claude-plugin), [`.mcp.json`](./.mcp.json)) so installing it sets
-up both pieces together instead of two separate steps — see Install below.
+your library — but you don't have to set them up separately. Any agent can install both
+in one pass by following [`INSTALL.md`](./INSTALL.md), and for Claude Code the whole repo
+is packaged as a single plugin ([`.claude-plugin/`](./.claude-plugin),
+[`.mcp.json`](./.mcp.json)) that does the same in one command — see Install below.
 
 ## Install
 
-**Claude Code — one step, both pieces:** this repo is a Claude Code plugin that bundles the
-skill *and* the remote MCP connection together, so a single install sets up both instead of
-doing them separately.
+Both pieces go in together — you never have to install the skill and connect the MCP
+server as two separate errands.
+
+**Any agent — one step:** paste this into your agent (Claude Code, Claude Desktop, Cursor,
+Codex CLI, …) and it does the whole setup itself:
+
+```
+Set up nourishible for me by reading and following
+https://raw.githubusercontent.com/mag-dot/nourishible-mcp/main/INSTALL.md
+```
+
+[`INSTALL.md`](./INSTALL.md) is written for the agent rather than for you: it tells it to
+install the skill *and* register the remote MCP server in the same pass, with the exact
+locations and commands for the common agents. Where a step needs a GUI it can't drive
+(Claude Desktop's connector settings, the claude.ai skill upload), it hands you that one
+piece to click instead of silently skipping it.
+
+**Claude Code — one command, if you'd rather not paste a prompt:** this repo is also a
+Claude Code plugin bundling the skill *and* the MCP connection.
 
 ```
 /plugin marketplace add mag-dot/nourishible-mcp
 /plugin install nourishible@nourishible-mcp
 ```
 
-The MCP connection is registered immediately; you still complete the OAuth sign-in (your
-agent pops your browser, you approve) the first time it actually tries to save something —
-that part can't be skipped, it's what ties the connection to *your* account. Everything
-else — extraction, structuring, saving — just works after that.
+Either way, the MCP connection is registered immediately and you complete the OAuth
+sign-in (your agent pops your browser, you approve) the first time it actually tries to
+save something — that part can't be skipped, it's what ties the connection to *your*
+account. Everything else — extraction, structuring, saving — just works after that.
 
-**Any other MCP-capable agent** (Claude Desktop, Cursor, …): install the skill and connect
-nourishible as two separate steps, since the plugin bundling above is Claude Code-specific.
-
-1. Install the skill: copy `skills/recipe-nourishible/` into your agent's skill directory
-   (see your agent's docs for where that is).
-2. Connect nourishible: see `nourishible.com/mcp` for the exact command for your agent.
-3. Paste a recipe video/note link and ask your agent to save it.
+Then paste a recipe video/note link and ask your agent to save it.
 
 ## License
 

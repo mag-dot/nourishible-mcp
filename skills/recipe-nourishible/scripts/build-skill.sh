@@ -17,6 +17,15 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   exit 1
 fi
 
+# The repo-root SKILL.md is a published copy of this skill's instructions, so an
+# agent can fetch them from raw.githubusercontent.com/.../main/SKILL.md without
+# cloning. It has to stay byte-identical to the real one in the skill directory.
+if ! diff -q SKILL.md skills/recipe-nourishible/SKILL.md >/dev/null; then
+  echo "error: root SKILL.md has drifted from skills/recipe-nourishible/SKILL.md" >&2
+  echo "       fix with: cp skills/recipe-nourishible/SKILL.md SKILL.md" >&2
+  exit 1
+fi
+
 mkdir -p dist
 OUT="dist/recipe-nourishible.skill"
 git archive --format=zip --prefix=recipe-nourishible/ --output="$OUT" HEAD:skills/recipe-nourishible
