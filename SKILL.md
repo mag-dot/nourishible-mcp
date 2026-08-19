@@ -149,12 +149,16 @@ Once dependencies, the API-key choice, and this preference are handled, write or
 
 - User pastes an Instagram Reel, YouTube Short/video, or Xiaohongshu (XHS/RED/小红书) note
   link and asks to save/extract it as a recipe, or types `/recipe-nourishible <url>`.
+- User pastes an Instagram **carousel** (`/p/…`, often with `?img_index=N`) whose recipe is
+  written on the images themselves — see "Instagram carousels" in Step 1. A carousel may
+  hold several separate recipes, one per slide.
 - User asks "what's the recipe in this video/post" for something that is clearly a
   cooking/recipe video or note.
 
 Not for: general video Q&A unrelated to recipes, blog/website recipe scraping (out of
 scope — no download step applies), TikTok (not currently supported by the bundled
-download script).
+download script). Instagram carousels ARE supported, but only via the screen-capture
+path below — there is no fetch path for them either.
 
 **Instagram is macOS-only.** YouTube and Xiaohongshu work everywhere this skill runs.
 Instagram goes through local screen capture (Step 1), which needs macOS's Screen Recording
@@ -340,6 +344,85 @@ walking a list of posts unattended — those cross from "recording your own scre
 
 **If `capture-only.sh` reports it couldn't find the reel window**, the post likely isn't
 open and playing in a visible Chrome tab — ask the user to check, don't retry blindly.
+
+### Instagram carousels (multi-image `/p/` posts)
+
+**Decide which of the two Instagram paths you're on before running anything.** A `/p/` URL
+is not automatically a carousel — Instagram serves single images, videos and carousels all
+under `/p/`. The distinguishing question is whether the post has a video: if it does, it's
+the reel path above. A carousel of still images has no video, no audio and no duration, so
+`capture-only.sh` is the wrong tool — it would record 45 seconds of a motionless slide and
+hand Whisper silence to transcribe.
+
+An `?img_index=N` parameter in the URL is a strong hint it's a carousel (it's how the web
+app addresses slide N), but its absence proves nothing — it only appears once the user has
+navigated between slides. When unsure, ask the user, or look at the preview frame.
+
+Same preflight as the reel path (`--check-capture` / `--install-capture`, macOS-only, for
+the same reason). Tell the user to open the post **in Google Chrome** and **click it open**
+so the post itself is on screen — not the profile grid or feed with the post's URL merely
+in the address bar. Then:
+
+```bash
+"${SKILL_DIR}/scripts/capture/capture-carousel.sh"
+```
+
+This takes no duration. It reuses the reel path's window detection, crop geometry and
+on-device Vision OCR, then replaces the video recording with **one screenshot per slide,
+advanced by the user**: it prompts, the user brings the next slide up, presses RETURN, and
+it captures. They type `d` when there are no more slides. It prints `CAPTURE_DIR=<path>`
+and `slides: <n>` on success.
+
+**Why it prompts instead of clicking through the carousel itself:** advancing the slides
+from a script is precisely the "scripting the play button" case
+[`docs/capture/CONTRACT.md`](../../docs/capture/CONTRACT.md) prohibits, and reading the
+slide image URLs out of the DOM to download them is the automated-fetch case it also
+prohibits. The human advances; the script records their screen. Don't optimise this into an
+unattended loop — that trades the contract away for keystrokes.
+
+What you get:
+
+- `frame_001.jpg … frame_NNN.jpg` — one image per slide, in the order captured.
+- `frame_001.txt … frame_NNN.txt` — **per-slide OCR, one file per slide.** This is the
+  important difference from the reel path, and it is deliberate: the slide boundary is the
+  only signal telling you whether you're looking at one recipe or several (see below), so
+  it's preserved on disk rather than flattened.
+- `onscreen.txt` — every slide's OCR concatenated with `--- frame_NNN ---` delimiters, for
+  when you want to read it all at once. **Not deduped**, unlike the reel path's
+  `onscreen.clean.txt`: `dedupe-loop.mjs` exists because a reel *loops* and repeats itself,
+  whereas distinct slides are not repetitions. Folding "1 cup oats" on slide 2 into the same
+  line on slide 5 would silently merge two different recipes.
+- `caption.txt` — the caption as exact text, same `og:description` read as the reel path,
+  same caveats. Often absent on a carousel reached by in-app navigation (the SPA doesn't
+  always re-render the meta tag) — the per-slide OCR is the fallback, and since the crop
+  includes the caption panel it usually captured the caption anyway.
+- `cover.jpg` — a copy of slide 1. Unlike a reel (where `capture.sh` samples a third of the
+  way in to avoid a title card), a carousel's first slide is the cover the creator chose.
+
+**One recipe or several? — decide this before structuring, it changes the output.** A
+carousel is used both ways, and the two are easy to tell apart once you read the slides:
+
+- **N recipes, one per slide** — each slide is self-contained, with its own dish name and
+  its own ingredient list. Common for "5 lunchbox ideas" / "iron-rich baby meals" round-up
+  posts. Save these as **separate recipes**, one `save_recipe` call each, each with its own
+  title and its own `frame_NNN.jpg` as the thumbnail. Do not concatenate them into one
+  recipe with 30 ingredients — that recipe is not cookable and matches nothing.
+- **One recipe across many slides** — slide 1 is a title/hero, later slides carry
+  ingredients then method, and no slide stands alone. Save as **one recipe**, exactly like a
+  reel.
+- **Ambiguous** — if some slides are recipes and others are filler (a "save this post" call
+  to action, a promo card), extract the real ones and ignore the filler. If you genuinely
+  can't tell whether it's one recipe or several, ask the user rather than guessing; the
+  wrong choice is expensive to undo once saved.
+
+Run the Step 0.5 dedup check per recipe you're about to save, not once for the post — N
+recipes from one carousel are N separate library entries, and re-running a capture must not
+create duplicates of any of them. They share a `sourceUrl`, so match on title as well.
+
+**If the script says the post isn't open**, it checked the page and found the feed/profile
+grid rather than the post. Ask the user to click the post open — don't retry blindly, and
+don't fall back to capturing anyway: a screenshot of the feed OCRs into a dozen strangers'
+captions that read exactly like real evidence.
 
 ### Xiaohongshu (XHS/RED/小红书)
 
@@ -779,8 +862,9 @@ letting it surprise the user mid-run:
 - `scripts/setup.py` — preflight/installer for both paths (`--check`/`--install` for
   YouTube, `--check-capture`/`--install-capture` for Instagram, gated separately so a
   YouTube-only user is never asked to install the Instagram half).
-- `scripts/capture/` (`capture.sh`, `capture-only.sh`, `read-caption.sh`, `ocr.swift`,
-  `dedupe-loop.mjs`) — the Instagram path. See Attribution below for where this came from,
+- `scripts/capture/` (`capture.sh`, `capture-only.sh`, `capture-carousel.sh`,
+  `read-caption.sh`, `ocr.swift`, `dedupe-loop.mjs`) — the Instagram path;
+  `capture-carousel.sh` is the still-image carousel variant of `capture-only.sh`. See Attribution below for where this came from,
   and [`docs/capture/CONTRACT.md`](../../docs/capture/CONTRACT.md) before changing anything
   about how it acquires content.
 
