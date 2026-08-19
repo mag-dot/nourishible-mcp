@@ -565,7 +565,15 @@ second place for it to drift out of sync and break.
    found a match and the user confirmed): call `update_recipe` with that recipe's `id` and
    only the fields that changed — omitted fields are left untouched, so don't resend the
    whole object out of habit.
-3. **Thumbnail:** call `set_recipe_thumbnail` with the saved/updated recipe's `id`. What you
+3. **If `save_recipe`'s response has `duplicate: true` instead of a saved recipe:**
+   nourishible found an existing recipe for this video server-side that Step 0.5 missed
+   (a race with another save on this account is the normal cause) and created nothing.
+   This is not a failure — don't retry the call, and don't treat it as an error to work
+   around. Use the response's `existingRecipeId`/`existingTitle` the same way Step 0.5
+   handles a match: tell the user it's already saved and ask whether they want to
+   re-extract, then `update_recipe` on that id if they do. Skip the rest of this list for
+   this attempt.
+4. **Thumbnail:** call `set_recipe_thumbnail` with the saved/updated recipe's `id`. What you
    pass depends on which connector you're using — check which tool description you actually
    see, since the two connectors take this differently:
    - **Remote MCP server:** pass the picked frame's image bytes, base64-encoded, as
@@ -576,9 +584,9 @@ second place for it to drift out of sync and break.
      itself.
    Do this every time there's a frame to give it — a recipe saved without this call shows
    with no thumbnail in the library.
-4. Read back the tool's response for the real `id`/`slug` nourishible assigned, and use
+5. Read back the tool's response for the real `id`/`slug` nourishible assigned, and use
    that (not anything you invented) in your Step 6 summary to the user.
-5. **If the response includes a `safety` field** (nourishible computes this server-side
+6. **If the response includes a `safety` field** (nourishible computes this server-side
    for recipes that read as baby/infant food — you don't need to do anything to trigger
    it), relay its `flags` plainly in your Step 6 summary: each flag's `message`, verbatim.
    This is deterministic, cited guidance the server computed, not your own judgment — don't
