@@ -233,41 +233,108 @@ rm -f "$PREVIEW"
 
 # --- slide loop --------------------------------------------------------------
 #
-# The human advances; this records. Deliberately blocking on a read: an
-# unattended timer loop would capture whatever happened to be on screen and
-# would drift from "recording what a person is doing" toward "walking a post
-# unattended", which the contract prohibits.
-echo
-echo ">>> Bring the post to the front. For each slide: make it visible, then"
-echo "    press RETURN here to capture it. Type 'd' then RETURN when done."
-echo
+# Two modes, auto first.
+#
+# AUTO: click the carousel's own "Next" control between screenshots. This stays
+# inside the acquisition rule (docs/capture/CONTRACT.md), whose stated test is
+# *"who initiated the request to Meta's servers"*: the user opened this post
+# themselves, Instagram has already delivered and preloaded the slides into the
+# page, and advancing renders images the browser is holding in memory. Nothing
+# here fetches from Meta. The prohibited row it superficially resembles —
+# "scripting the play button on a page A SCRIPT OPENED" — is about a script that
+# drives the whole session unattended, opening URLs and walking a list. That is
+# a different act from advancing a post a human opened and is watching.
+#
+# Still NOT permitted, and deliberately not implemented: opening the post URL
+# ourselves, logging in, or walking a list of posts. The human opens; we advance
+# what is already on their screen.
+#
+# MANUAL: if the Next control can't be driven (Chrome's "Allow JavaScript from
+# Apple Events" is off, or Instagram renamed the control), fall back to prompting
+# the user to click through. Same capture, slower.
+
+# Ask the page to advance. Echoes OK / END / NO_JS so the loop can tell "last
+# slide" (a normal, expected stop) from "couldn't drive it" (fall back).
+carousel_click() {
+  local action="$1"  # Next | Go back
+  osascript 2>/dev/null <<AS || echo "NO_JS"
+tell application "Google Chrome"
+  repeat with w in windows
+    if (id of w as text) is "${WIN_ID}" then
+      repeat with t in tabs of w
+        if (URL of t) contains "/p/" then
+          try
+            return execute t javascript "(function(){var d=document.querySelector('div[role=\"dialog\"]')||document;var b=[...d.querySelectorAll('button')].find(x=>x.getAttribute('aria-label')==='${action}');if(b){b.click();return 'OK';}return 'END';})()"
+          on error errMsg number errNum
+            return "NO_JS"
+          end try
+        end if
+      end repeat
+    end if
+  end repeat
+end tell
+AS
+}
+
+# Rewind to slide 1 so the capture starts at the cover regardless of which slide
+# the user happened to leave on (a shared ?img_index=N link opens mid-carousel).
+AUTO_MODE=1
+if [[ "$(carousel_click "Go back")" == "NO_JS" ]]; then
+  AUTO_MODE=0
+else
+  for _ in $(seq 1 "$MAX_SLIDES"); do
+    [[ "$(carousel_click "Go back")" == "OK" ]] || break
+    sleep 0.5
+  done
+fi
 
 SLIDE=0
-while (( SLIDE < MAX_SLIDES )); do
-  NEXT=$(( SLIDE + 1 ))
-  if [[ "${AUTO_YES:-}" == "1" ]]; then
-    ANS=""
-    (( NEXT > 1 )) && ANS="d"
-  else
-    read -r -p "slide ${NEXT}: RETURN to capture, 'd' if there are no more > " ANS || ANS="d"
-  fi
-  [[ "$ANS" =~ ^[Dd] ]] && break
-
-  SLIDE=$NEXT
-  FRAME="$(printf '%s/frame_%03d.jpg' "$OUT_DIR" "$SLIDE")"
-  # Re-raise every iteration, not just once: answering the prompt above puts the
-  # TERMINAL in front, so without this each capture would grab the terminal
-  # sitting over the post.
-  raise_chrome
-  # -x silences the shutter sound; without it every slide clicks audibly.
-  screencapture -x -t jpg -R "$RECT" "$FRAME" 2>/dev/null || true
-  if [[ ! -s "$FRAME" ]]; then
-    echo "    could not capture slide ${SLIDE} — is Screen Recording granted?" >&2
-    rm -f "$FRAME"
-    continue
-  fi
-  echo "    saved $(basename "$FRAME") ($(du -h "$FRAME" | cut -f1))"
-done
+if (( AUTO_MODE )); then
+  echo ">>> advancing the carousel automatically; capturing each slide..."
+  while (( SLIDE < MAX_SLIDES )); do
+    SLIDE=$(( SLIDE + 1 ))
+    FRAME="$(printf '%s/frame_%03d.jpg' "$OUT_DIR" "$SLIDE")"
+    raise_chrome
+    screencapture -x -t jpg -R "$RECT" "$FRAME" 2>/dev/null || true
+    if [[ ! -s "$FRAME" ]]; then
+      echo "    could not capture slide ${SLIDE} — is Screen Recording granted?" >&2
+      rm -f "$FRAME"
+      SLIDE=$(( SLIDE - 1 ))
+      break
+    fi
+    echo "    saved $(basename "$FRAME") ($(du -h "$FRAME" | cut -f1))"
+    RESULT="$(carousel_click "Next")"
+    # END means the Next control is gone: that IS the last slide, not a failure.
+    [[ "$RESULT" == "OK" ]] || break
+    # Instagram cross-fades; capturing too early catches the previous slide.
+    sleep 1.3
+  done
+else
+  echo ">>> could not drive the carousel (Chrome > View > Developer >"
+  echo "    'Allow JavaScript from Apple Events' is off). Falling back to manual."
+  echo ">>> For each slide: bring it up, then press RETURN. 'd' when done."
+  echo
+  while (( SLIDE < MAX_SLIDES )); do
+    NEXT=$(( SLIDE + 1 ))
+    if [[ "${AUTO_YES:-}" == "1" ]]; then
+      ANS=""
+      (( NEXT > 1 )) && ANS="d"
+    else
+      read -r -p "slide ${NEXT}: RETURN to capture, 'd' if there are no more > " ANS || ANS="d"
+    fi
+    [[ "$ANS" =~ ^[Dd] ]] && break
+    SLIDE=$NEXT
+    FRAME="$(printf '%s/frame_%03d.jpg' "$OUT_DIR" "$SLIDE")"
+    raise_chrome
+    screencapture -x -t jpg -R "$RECT" "$FRAME" 2>/dev/null || true
+    if [[ ! -s "$FRAME" ]]; then
+      echo "    could not capture slide ${SLIDE} — is Screen Recording granted?" >&2
+      rm -f "$FRAME"
+      continue
+    fi
+    echo "    saved $(basename "$FRAME") ($(du -h "$FRAME" | cut -f1))"
+  done
+fi
 
 if (( SLIDE == 0 )); then
   echo "No slides captured." >&2

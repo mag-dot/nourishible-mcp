@@ -368,17 +368,29 @@ in the address bar. Then:
 ```
 
 This takes no duration. It reuses the reel path's window detection, crop geometry and
-on-device Vision OCR, then replaces the video recording with **one screenshot per slide,
-advanced by the user**: it prompts, the user brings the next slide up, presses RETURN, and
-it captures. They type `d` when there are no more slides. It prints `CAPTURE_DIR=<path>`
-and `slides: <n>` on success.
+on-device Vision OCR, then replaces the video recording with **one screenshot per slide**.
+It rewinds to slide 1 first (a shared `?img_index=N` link opens mid-carousel), screenshots
+each slide, clicks the post's own "Next" control, and stops when that control disappears —
+which is how it knows it reached the end, with no slide count to supply. It prints
+`CAPTURE_DIR=<path>` and `slides: <n>` on success.
 
-**Why it prompts instead of clicking through the carousel itself:** advancing the slides
-from a script is precisely the "scripting the play button" case
-[`docs/capture/CONTRACT.md`](../../docs/capture/CONTRACT.md) prohibits, and reading the
-slide image URLs out of the DOM to download them is the automated-fetch case it also
-prohibits. The human advances; the script records their screen. Don't optimise this into an
-unattended loop — that trades the contract away for keystrokes.
+If the Next control can't be driven — Chrome's "Allow JavaScript from Apple Events" is off,
+or Instagram renamed it — it falls back to prompting the user to click through each slide
+manually. Same capture, slower.
+
+**Why advancing the slides is inside the acquisition rule.**
+[`docs/capture/CONTRACT.md`](../../docs/capture/CONTRACT.md)'s stated test is *"who
+initiated the request to Meta's servers"*, and the answer here is nobody: the user opened
+the post themselves, Instagram already delivered and preloaded the slides into the page,
+and clicking Next renders images the browser is holding in memory. The prohibited row this
+superficially resembles — "scripting the play button on a page **a script opened**" — is
+about a script driving a whole session unattended, opening URLs and walking a list. That is
+a different act from advancing a post a human opened and is sitting in front of.
+
+What remains prohibited, and is deliberately not implemented: opening the post URL
+ourselves, logging in, walking a list of posts, and reading the slide image URLs out of the
+DOM to download them (an automated fetch to Meta's CDN). The human opens the post; the
+script only advances and records what is already on their screen.
 
 What you get:
 
