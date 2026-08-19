@@ -603,18 +603,14 @@ If those tools aren't available, tell the user this skill needs a connected nour
 account to save anything, and walk them through connecting it — this is a one-time,
 per-agent setup, not something to redo per recipe:
 
-- **The normal path — a remote MCP server, no local install:** point them at the exact URL
-  and instructions on **nourishible.com/mcp**, and if their agent supports adding a remote
-  MCP server directly (Claude Code: `claude mcp add --transport http nourishible <url from
-  that page>`; Claude Desktop and other MCP clients have their own equivalent "add remote
-  server" flow), that's the whole setup. **Connecting the server is the login** — the first
-  tool call triggers the agent's own browser-based OAuth flow (a real nourishible sign-in
-  page, then an "Allow" screen naming this skill/agent), and the agent stores the resulting
-  token itself. There's no separate CLI login command for this path, and nothing to build.
-- **Fallback — a local MCP client:** for an agent that can't add a remote MCP server, point
-  them at the `mcp/` package in this same repository (`mcp/README.md`) — a local server they
-  clone/build/run themselves, with its own one-time `npm run login` step. Only needed when
-  the remote path above genuinely isn't supported.
+Point them at the exact URL and instructions on **nourishible.com/mcp**, and add it as a
+remote MCP server (Claude Code: `claude mcp add --transport http nourishible <url from that
+page>`; Claude Desktop and other MCP clients have their own equivalent "add remote server"
+flow) — that's the whole setup. **Connecting the server is the login** — the first tool call
+triggers the agent's own browser-based OAuth flow (a real nourishible sign-in page, then an
+"Allow" screen naming this skill/agent), and the agent stores the resulting token itself.
+There's no separate CLI login command, no local server to clone/build/run, and nothing to
+build — this is the only connection path this skill uses.
 
 Don't try to improvise the OAuth flow yourself from raw HTTP calls — it already has one
 correct implementation on nourishible's side; a hand-rolled copy here would just be a
@@ -636,17 +632,11 @@ second place for it to drift out of sync and break.
    handles a match: tell the user it's already saved and ask whether they want to
    re-extract, then `update_recipe` on that id if they do. Skip the rest of this list for
    this attempt.
-4. **Thumbnail:** call `set_recipe_thumbnail` with the saved/updated recipe's `id`. What you
-   pass depends on which connector you're using — check which tool description you actually
-   see, since the two connectors take this differently:
-   - **Remote MCP server:** pass the picked frame's image bytes, base64-encoded, as
-     `imageBase64` — a remote server can't read a file path off your machine. Read the
-     frame file and encode it yourself before calling the tool.
-   - **Local `mcp/` client:** pass the local filesystem path to the JPEG directly as
-     `filePath` — this connector runs on the same machine as you, so it reads the file
-     itself.
-   Do this every time there's a frame to give it — a recipe saved without this call shows
-   with no thumbnail in the library.
+4. **Thumbnail:** call `set_recipe_thumbnail` with the saved/updated recipe's `id`, passing
+   the picked frame's image bytes, base64-encoded, as `imageBase64` — the remote server can't
+   read a file path off your machine, so Read the frame file and encode it yourself before
+   calling the tool. Do this every time there's a frame to give it — a recipe saved without
+   this call shows with no thumbnail in the library.
 5. Read back the tool's response for the real `id`/`slug` nourishible assigned, and use
    that (not anything you invented) in your Step 6 summary to the user.
 6. **If the response includes a `safety` field** (nourishible computes this server-side
