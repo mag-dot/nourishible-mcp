@@ -16,10 +16,76 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from config import frame_cap, get_config  # noqa: E402
-from download import download, fetch_captions, is_url  # noqa: E402
+from download import (  # noqa: E402
+    download,
+    download_xhs_images,
+    fetch_captions,
+    is_url,
+    is_xiaohongshu,
+    probe_xhs_note,
+)
 from frames import MAX_FPS, auto_fps, auto_fps_focus, extract_at_timestamps, extract_keyframes, extract_scene_or_uniform, format_time, get_metadata, merge_frames, parse_time, parse_timestamps  # noqa: E402
 from transcribe import filter_range, format_transcript, parse_vtt  # noqa: E402
 from whisper import load_api_key, transcribe_video  # noqa: E402
+
+
+def report_xhs_photo_note(url: str, work: Path) -> int:
+    """Report path for a Xiaohongshu photo/图文 note — no video, so none of
+    the ffmpeg/whisper machinery above applies. Downloads every image in the
+    note and prints a report shaped like the video path's, so the rest of the
+    skill (Step 2 onward) can Read the image paths the same way it reads
+    video frames. The note's description is the caption-text equivalent of
+    Instagram's caption.txt — often the fullest ingredient/step source.
+    """
+    print("[watch] photo/图文 note detected (no video) — downloading images…", file=sys.stderr)
+    result = download_xhs_images(url, work / "images")
+    info = result["info"]
+    paths = result["image_paths"]
+
+    print()
+    print("# watch: video report")
+    print()
+    print(f"- **Source:** {url}")
+    if info.get("title"):
+        print(f"- **Title:** {info['title']}")
+    if info.get("uploader"):
+        print(f"- **Uploader:** {info['uploader']}")
+    print("- **Content type:** Xiaohongshu photo/图文 note (image carousel, no video)")
+    print(f"- **Images:** {len(paths)}")
+    print("- **Transcript:** none (no video/audio in this note — see caption below)")
+    print()
+    print("## Frames")
+    print()
+    print(f"Frames live at: `{work / 'images'}`")
+    print()
+    print(
+        "**Read each image path below with the Read tool.** These are the note's images "
+        "in original carousel order — there is no video timeline, so none of these have a "
+        "timestamp; treat `timestampSeconds` as `null` for every step in this recipe."
+    )
+    print()
+    for i, p in enumerate(paths):
+        print(f"- `{p}` (index={i})")
+    print()
+    print("## Caption")
+    print()
+    if info.get("description"):
+        print(
+            "_This is the note's full text description — treat it as a first-class source, "
+            "same as Instagram's caption.txt. It frequently contains the complete "
+            "ingredient/step text, sometimes more complete than what's shown on any single "
+            "image._"
+        )
+        print()
+        print("```")
+        print(info["description"])
+        print("```")
+    else:
+        print("_No description text on this note — rely on the images alone._")
+    print()
+    print("---")
+    print(f"_Work dir: `{work}` — delete when done._")
+    return 0
 
 
 def main() -> int:
@@ -108,6 +174,16 @@ def main() -> int:
     print(f"[watch] working dir: {work}", file=sys.stderr)
 
     url_source = is_url(args.source)
+
+    if url_source and is_xiaohongshu(args.source):
+        print("[watch] checking Xiaohongshu note type…", file=sys.stderr)
+        probe = probe_xhs_note(args.source)
+        if not probe.get("formats"):
+            # Photo/图文 note — no video at all, entirely different report shape.
+            return report_xhs_photo_note(args.source, work)
+        # Video note — a normal yt-dlp-backed video, same as YouTube from here on.
+        print("[watch] video note detected — proceeding as a normal video download", file=sys.stderr)
+
     dl: dict = {"subtitle_path": None, "info": {}, "downloaded": False}
     transcript_segments: list[dict] = []
     transcript_text: str | None = None

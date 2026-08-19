@@ -1,7 +1,7 @@
 ---
 name: recipe-nourishible
 version: "1.0.0"
-description: Turn a recipe video (Instagram Reel, YouTube Short/video) into a structured recipe — title, tagged ingredients, numbered steps matched to the video moment they happen at, servings, source credit, a picked thumbnail — and save it straight to your nourishible account. Downloads the video, reads on-screen text, and cross-references the transcript and caption itself; no separate OCR/extraction API. Connects to nourishible via a hosted MCP server — no local server to build, no CLI login step.
+description: Turn a recipe video or post (Instagram Reel, YouTube Short/video, Xiaohongshu/XHS/RED note) into a structured recipe — title, tagged ingredients, numbered steps matched to the video moment they happen at, servings, source credit, a picked thumbnail — and save it straight to your nourishible account. Downloads the video (or, for an XHS photo/图文 note, its images), reads on-screen text, and cross-references the transcript/description and caption itself; no separate OCR/extraction API. Connects to nourishible via a hosted MCP server — no local server to build, no CLI login step.
 argument-hint: "<video-url>"
 allowed-tools: Bash, Read, AskUserQuestion
 homepage: https://github.com/mag-dot/nourishible-mcp
@@ -147,19 +147,25 @@ Once dependencies, the API-key choice, and this preference are handled, write or
 
 ## When to use
 
-- User pastes an Instagram Reel or YouTube Short/video link and asks to save/extract it as
-  a recipe, or types `/recipe-nourishible <url>`.
-- User asks "what's the recipe in this video" for something that is clearly a
-  cooking/recipe video.
+- User pastes an Instagram Reel, YouTube Short/video, or Xiaohongshu (XHS/RED/小红书) note
+  link and asks to save/extract it as a recipe, or types `/recipe-nourishible <url>`.
+- User asks "what's the recipe in this video/post" for something that is clearly a
+  cooking/recipe video or note.
 
 Not for: general video Q&A unrelated to recipes, blog/website recipe scraping (out of
 scope — no download step applies), TikTok (not currently supported by the bundled
 download script).
 
-**Instagram is macOS-only.** YouTube works everywhere this skill runs. Instagram goes
-through local screen capture (Step 1), which needs macOS's Screen Recording permission —
-there's no equivalent on Linux/Windows. Tell the user plainly if their platform isn't
-Darwin and they paste an Instagram link; don't attempt it anyway.
+**Instagram is macOS-only.** YouTube and Xiaohongshu work everywhere this skill runs.
+Instagram goes through local screen capture (Step 1), which needs macOS's Screen Recording
+permission — there's no equivalent on Linux/Windows. Tell the user plainly if their
+platform isn't Darwin and they paste an Instagram link; don't attempt it anyway.
+
+**Xiaohongshu content is often a photo carousel, not a video.** A large share of XHS
+recipe content is a "图文" (photo/text) note — a sequence of images plus a text
+description, no video at all. This skill handles both shapes (see Step 1's Xiaohongshu
+section) but they produce a differently-shaped report — read that section rather than
+assuming the YouTube/Instagram video flow applies.
 
 ## Step 0.5 — dedup check (do this before spending any download/frame budget)
 
@@ -168,7 +174,12 @@ by this user. **Normalize both the incoming URL and every already-saved `sourceU
 comparing** — a raw string/exact match misses real duplicates: YouTube URLs routinely carry
 a tracking `&pp=...`/`&si=...`/`&t=...` param that has nothing to do with video identity.
 Extract just the video id (the `v=` param, or the path segment after `youtu.be/` /
-`shorts/`) from both sides and compare on that.
+`shorts/`) from both sides and compare on that. For a Xiaohongshu link, resolve a
+`xhslink.cn` short link to its canonical `xiaohongshu.com/discovery/item/<id>` or
+`/explore/<id>` form first (Step 1's Xiaohongshu section does this for you as a side
+effect of probing the note) and compare on that hex note id — the short link itself
+carries a rotating `xsec_token`/`share_id` that has nothing to do with note identity and
+will never match a previously-saved `sourceUrl` even for the exact same note.
 
 Call `list_my_recipes` (no query needed, or narrow with a title guess if the library is
 large) and scan the returned `sourceUrl` values yourself for a matching normalized video
@@ -330,6 +341,54 @@ walking a list of posts unattended — those cross from "recording your own scre
 **If `capture-only.sh` reports it couldn't find the reel window**, the post likely isn't
 open and playing in a visible Chrome tab — ask the user to check, don't retry blindly.
 
+### Xiaohongshu (XHS/RED/小红书)
+
+Works on every platform this skill runs on — no macOS-only screen-capture path needed
+here, unlike Instagram. `yt-dlp` ships a real `XiaoHongShu` extractor (unlike Instagram/
+TikTok), so this goes through `watch.py` the same way YouTube does; it auto-detects both
+URL shapes (`xiaohongshu.com/explore/<id>`, `xiaohongshu.com/discovery/item/<id>`, and
+`xhslink.cn/...` short links, which 302-redirect to the canonical form). Just run:
+
+```bash
+python3 "$WATCH_SCRIPT" "<xiaohongshu-or-xhslink-url>" --detail balanced --resolution 1024 --out-dir "${OUT_DIR:-}"
+```
+
+**A large share of XHS recipe content is a photo/图文 note, not a video** — a sequence of
+images plus a text description, no video/audio at all. `watch.py` probes the note first
+and branches automatically:
+
+- **Photo/图文 note** (no video stream — common for recipe cards, ingredient-list graphics,
+  step-by-step photo sequences): downloads every image in the carousel instead of video
+  frames. The report you get back has no transcript and no frame timestamps — every step's
+  `timestampSeconds` is `null` for this note type, not an evidence gap to chase. The note's
+  **description is the caption-text equivalent of Instagram's `caption.txt`**: treat it as a
+  first-class source per Step 2 — it very often carries the complete ingredient list and
+  numbered steps as plain text, sometimes more complete than any single image. Read every
+  image path the report lists, same as you'd Read video frames.
+- **Video note**: proceeds exactly like the YouTube path from here — same `--detail`/
+  `--resolution`/`--start`/`--end`/`--timestamps` flags, same transcript-cue pass, same
+  Whisper fallback if the note has no native captions (most XHS videos don't; expect to
+  fall back to Whisper on audio far more often than on YouTube).
+
+**Known limits, tested 19 Aug 2026 against one real photo-note share link:**
+
+- The tested link needed no login/cookies at all — public XHS content downloaded cleanly
+  with a bare, anonymous `yt-dlp` request, unlike Instagram. This has **not** been verified
+  against a currently-live video note (the one plausible test URL available — from
+  `yt-dlp`'s own extractor test suite — now returns empty formats/thumbnails, most likely
+  because the note itself has since been deleted, not because of an extraction failure).
+  Treat the video-note path as implemented-by-construction (identical code path to
+  YouTube) rather than independently verified end-to-end.
+- Real XHS share links carry an `xsec_token` query param tied to how the link was shared;
+  a bare note-id URL with no token attached may fail to load content even for a public
+  note. Always use the actual link the user pasted (or its yt-dlp-resolved canonical form)
+  rather than stripping query params down to just the note id before downloading —
+  stripping to the bare id is fine for the Step 0.5 dedup *comparison*, not for the
+  request itself.
+- If a note does turn out to need a login (private content, or XHS tightens anonymous
+  access later), there is currently no cookie/local-capture fallback for XHS the way there
+  is for Instagram — tell the user plainly rather than attempting one that doesn't exist.
+
 ### Focusing on a section (higher frame rate)
 
 When the user asks about a specific moment, or the video is long with a slow intro, pass
@@ -367,8 +426,8 @@ Produce a recipe JSON matching this schema exactly:
 ```json
 {
   "title": "string",
-  "sourceUrl": "string (the URL you were given)",
-  "sourcePlatform": "instagram | youtube",
+  "sourceUrl": "string (the resolved canonical URL — see Step 1's Xiaohongshu note on short links)",
+  "sourcePlatform": "instagram | youtube | xiaohongshu",
   "creatorHandle": "string",
   "thumbnailFramePath": "path to the single best-representative frame from Step 1 (not a new download — pick from what you already extracted)",
   "servings": "integer, best estimate if unstated (say so in confidence notes)",
@@ -414,6 +473,10 @@ Structuring rules:
   null — the app needs a starting number to scale from.
 
 ## Step 3.5 — match key moments to steps
+
+**Skip this step entirely for a Xiaohongshu photo/图文 note** — there's no video timeline
+to match against, so every step's `timestampSeconds` is simply `null`. That's not a gap to
+fill; go straight to Step 4.
 
 This is the step that makes a saved recipe's video timestamps actually useful (e.g. a step
 that reads "00:20 — add butter and stir"), not an occasional side effect of extraction.
@@ -657,6 +720,10 @@ tokens at most for a 10-minute video.
   `OPENAI_API_KEY` is set and Groq is not.
 - Writes the downloaded video, frames, audio, and an intermediate transcript to a working
   directory under the system temp dir (or `--out-dir`) so you can `Read` them.
+- **For a Xiaohongshu photo/图文 note:** downloads the note's images directly from XHS's
+  CDN (`sns-webpic-qc.xhscdn.com` and related `xhscdn.com` hosts) instead of a video — same
+  "public data, direct request, written to the working directory" shape as the video path,
+  just images instead of extracted frames.
 - Reads/creates `~/.config/watch/.env` (mode `0600`) to store the Whisper API key(s) and a
   `SETUP_COMPLETE` marker.
 - Calls the `save_recipe`/`update_recipe`/`set_recipe_thumbnail`/`list_my_recipes`/
@@ -701,10 +768,11 @@ letting it surprise the user mid-run:
   account via the connected tools.
 
 **Bundled files:**
-- `scripts/watch.py` (entry point), `scripts/download.py` (yt-dlp wrapper),
-  `scripts/frames.py` (ffmpeg frame extraction), `scripts/transcribe.py` (caption
-  selection + Whisper orchestration), `scripts/whisper.py` (Groq/OpenAI clients),
-  `scripts/config.py` (shared config helpers) — the YouTube path.
+- `scripts/watch.py` (entry point), `scripts/download.py` (yt-dlp wrapper — also handles
+  Xiaohongshu note-type probing and photo/图文 image downloads), `scripts/frames.py`
+  (ffmpeg frame extraction), `scripts/transcribe.py` (caption selection + Whisper
+  orchestration), `scripts/whisper.py` (Groq/OpenAI clients), `scripts/config.py` (shared
+  config helpers) — the YouTube and Xiaohongshu paths.
 - `scripts/setup.py` — preflight/installer for both paths (`--check`/`--install` for
   YouTube, `--check-capture`/`--install-capture` for Instagram, gated separately so a
   YouTube-only user is never asked to install the Instagram half).
