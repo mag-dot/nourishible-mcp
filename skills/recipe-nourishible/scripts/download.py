@@ -10,6 +10,7 @@ import json
 import shutil
 import subprocess
 import sys
+import urllib.request
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -20,6 +21,13 @@ VIDEO_EXTS = {".mp4", ".mkv", ".webm", ".mov", ".m4v", ".avi", ".flv", ".wmv"}
 # logged-in session is provided. Instagram in particular returns "login
 # required" / 401s for many Reels and most Stories without cookies.
 LOGIN_SENSITIVE_HOSTS = ("instagram.com", "www.instagram.com")
+
+# Xiaohongshu (XHS/RED/小红书) — served either from the full domain or a short
+# link (xhslink.cn) that 302s to it. yt-dlp ships a real extractor for this
+# (unlike Instagram/TikTok), but a large fraction of XHS content is a photo
+# carousel ("图文" note) with no video at all — that shape needs its own path,
+# see download_xhs_images() below.
+XIAOHONGSHU_HOSTS = ("xiaohongshu.com", "www.xiaohongshu.com", "xhslink.cn")
 
 
 def _cookie_args(cookies_from_browser: str | None, cookies_file: str | None) -> list[str]:
@@ -34,6 +42,92 @@ def _cookie_args(cookies_from_browser: str | None, cookies_file: str | None) -> 
 def is_login_sensitive(url: str) -> bool:
     host = urlparse(url).netloc.lower()
     return any(host == h or host.endswith("." + h) for h in LOGIN_SENSITIVE_HOSTS)
+
+
+def is_xiaohongshu(url: str) -> bool:
+    host = urlparse(url).netloc.lower()
+    return any(host == h or host.endswith("." + h) for h in XIAOHONGSHU_HOSTS)
+
+
+def probe_xhs_note(url: str) -> dict:
+    """Fetch a Xiaohongshu note's metadata via yt-dlp without downloading.
+
+    Distinguishes a video note (has playable ``formats``) from a photo/图文
+    note (image carousel, ``formats`` always empty — yt-dlp's XiaoHongShu
+    extractor only ever populates formats from the note's video stream, which
+    photo notes simply don't have). ``--ignore-no-formats-error`` is required
+    or yt-dlp raises instead of returning the metadata for a photo note.
+    """
+    if shutil.which("yt-dlp") is None:
+        raise SystemExit("yt-dlp is not installed. Install with: brew install yt-dlp")
+
+    cmd = ["yt-dlp", "--ignore-no-formats-error", "-j", "--", url]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0 or not result.stdout.strip():
+        raise SystemExit(
+            f"yt-dlp could not read this Xiaohongshu note (exit {result.returncode}): "
+            f"{result.stderr.strip()}"
+        )
+    # -j prints one JSON object per line; a single note is always exactly one line.
+    return json.loads(result.stdout.splitlines()[0])
+
+
+def download_xhs_images(url: str, out_dir: Path) -> dict:
+    """Download every image in a Xiaohongshu photo/图文 note (no video — a
+    captioned image carousel). Returns image paths plus title/description/
+    uploader/canonical-url, shaped like the ``info`` dict callers already get
+    from the video path so watch.py's report-building code doesn't need two
+    separate schemas.
+    """
+    info = probe_xhs_note(url)
+    thumbnails = info.get("thumbnails") or []
+    if not thumbnails:
+        raise SystemExit("No images or video found in this Xiaohongshu note.")
+
+    # Each image in the note appears twice in `thumbnails` — a lower-res
+    # "...!nd_prv_..." preview and a "...!nd_dft_..." fuller version, sharing
+    # the same `id`. Dedup by id, keeping whichever has the larger pixel area.
+    best_by_id: dict[str, dict] = {}
+    for thumb in thumbnails:
+        tid = str(thumb.get("id"))
+        area = (thumb.get("width") or 0) * (thumb.get("height") or 0)
+        cur = best_by_id.get(tid)
+        if cur is None or area > (cur.get("width") or 0) * (cur.get("height") or 0):
+            best_by_id[tid] = thumb
+    ordered = [
+        best_by_id[k] for k in sorted(best_by_id, key=lambda k: int(k) if k.isdigit() else 0)
+    ]
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    paths: list[str] = []
+    for i, thumb in enumerate(ordered):
+        img_url = thumb.get("url")
+        if not img_url:
+            continue
+        dest = out_dir / f"image_{i:04d}.jpg"
+        try:
+            req = urllib.request.Request(img_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=30) as resp, open(dest, "wb") as f:
+                shutil.copyfileobj(resp, f)
+            paths.append(str(dest))
+        except Exception as exc:
+            print(f"[watch] failed to download image {i}: {exc}", file=sys.stderr)
+
+    if not paths:
+        raise SystemExit("Failed to download any images from this Xiaohongshu note.")
+
+    return {
+        "image_paths": paths,
+        "info": {
+            "title": info.get("title"),
+            "uploader": info.get("uploader_id"),
+            "description": info.get("description"),
+            # webpage_url is the resolved xiaohongshu.com/... URL, not the
+            # xhslink.cn short link — use this as sourceUrl so dedup can key
+            # off the stable note id instead of a rotating share token.
+            "url": info.get("webpage_url") or url,
+        },
+    }
 
 
 def is_url(source: str) -> bool:
