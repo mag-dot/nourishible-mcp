@@ -28,13 +28,31 @@ Two pieces, each doing one job:
 
 The skill calls the MCP server's tools to save what it extracted — it doesn't (and can't)
 write to the database on its own. You need both connected for a recipe to actually land in
-your library.
+your library. For Claude Code, this repo is packaged as a single plugin
+([`.claude-plugin/`](./.claude-plugin), [`.mcp.json`](./.mcp.json)) so installing it sets
+up both pieces together instead of two separate steps — see Install below.
 
 ## Install
 
-1. Install the skill for your agent (Claude Code: as a plugin, or copy
-   `skills/recipe-nourishible/` into `~/.claude/skills/`; other harnesses have their own
-   skill directory — see your agent's docs).
+**Claude Code — one step, both pieces:** this repo is a Claude Code plugin that bundles the
+skill *and* the remote MCP connection together, so a single install sets up both instead of
+doing them separately.
+
+```
+/plugin marketplace add mag-dot/nourishible-mcp
+/plugin install nourishible@nourishible-mcp
+```
+
+The MCP connection is registered immediately; you still complete the OAuth sign-in (your
+agent pops your browser, you approve) the first time it actually tries to save something —
+that part can't be skipped, it's what ties the connection to *your* account. Everything
+else — extraction, structuring, saving — just works after that.
+
+**Any other MCP-capable agent** (Claude Desktop, Cursor, …): install the skill and connect
+nourishible as two separate steps, since the plugin bundling above is Claude Code-specific.
+
+1. Install the skill: copy `skills/recipe-nourishible/` into your agent's skill directory
+   (see your agent's docs for where that is).
 2. Connect nourishible: see `nourishible.com/mcp` for the exact command for your agent.
 3. Paste a recipe video/note link and ask your agent to save it.
 

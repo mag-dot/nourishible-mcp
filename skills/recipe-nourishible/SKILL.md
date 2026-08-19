@@ -1,6 +1,6 @@
 ---
 name: recipe-nourishible
-version: "1.0.0"
+version: "1.1.0"
 description: Turn a recipe video or post (Instagram Reel, YouTube Short/video, Xiaohongshu/XHS/RED note) into a structured recipe — title, tagged ingredients, numbered steps matched to the video moment they happen at, servings, source credit, a picked thumbnail — and save it straight to your nourishible account. Downloads the video (or, for an XHS photo/图文 note, its images), reads on-screen text, and cross-references the transcript/description and caption itself; no separate OCR/extraction API. Connects to nourishible via a hosted MCP server — no local server to build, no CLI login step.
 argument-hint: "<video-url>"
 allowed-tools: Bash, Read, AskUserQuestion
@@ -597,7 +597,10 @@ in the nourishible app, under *their own* account.
 
 If you can see `save_recipe`, `update_recipe`, `set_recipe_thumbnail`, `list_my_recipes`,
 `get_my_recipe`, `search_recipes`, and `get_recipe` as callable tools in this session, skip
-to "Save the recipe" below — you're already connected.
+to "Save the recipe" below — you're already connected. **If you're running as the
+`nourishible` Claude Code plugin**, this is already true by construction: the plugin bundles
+`.mcp.json` alongside this skill, so the MCP server was registered the moment the plugin was
+installed — the only thing that can still be missing is the OAuth sign-in itself (see below).
 
 If those tools aren't available, tell the user this skill needs a connected nourishible
 account to save anything, and walk them through connecting it — this is a one-time,
@@ -605,12 +608,17 @@ per-agent setup, not something to redo per recipe:
 
 Point them at the exact URL and instructions on **nourishible.com/mcp**, and add it as a
 remote MCP server (Claude Code: `claude mcp add --transport http nourishible <url from that
-page>`; Claude Desktop and other MCP clients have their own equivalent "add remote server"
-flow) — that's the whole setup. **Connecting the server is the login** — the first tool call
+page>` — or, better, install the `nourishible` plugin from this repo's marketplace, which
+does this step for you as part of installing the skill itself, see this repo's README;
+Claude Desktop and other MCP clients have their own equivalent "add remote server" flow) —
+that's the whole setup. **Connecting the server is the login** — the first tool call
 triggers the agent's own browser-based OAuth flow (a real nourishible sign-in page, then an
 "Allow" screen naming this skill/agent), and the agent stores the resulting token itself.
 There's no separate CLI login command, no local server to clone/build/run, and nothing to
-build — this is the only connection path this skill uses.
+build — this is the only connection path this skill uses. The plugin path above still
+requires this same OAuth step; it only removes the separate "add the MCP server" step, not
+the sign-in itself — that part is inherently tied to *this* user's account and can't be
+skipped or done on their behalf.
 
 Don't try to improvise the OAuth flow yourself from raw HTTP calls — it already has one
 correct implementation on nourishible's side; a hand-rolled copy here would just be a
