@@ -1,0 +1,11 @@
+{
+  "name": "nourishible",
+  "description": "Extract recipes from cooking videos (YouTube, Instagram) and Xiaohongshu notes, and save them straight to your nourishible account.",
+  "version": "1.1.0",
+  "author": {
+    "name": "nourishible"
+  },
+  "homepage": "https://nourishible.com",
+  "repository": "https://github.com/mag-dot/nourishible-mcp",
+  "license": "MIT"
+}
