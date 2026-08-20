@@ -138,6 +138,13 @@ echo "crop   : ${RECT}  (x,y,w,h in points)"
 # failing: it is plausible-but-wrong evidence, and the reader downstream cannot
 # tell it apart from the real post. Ask the page what it is showing.
 #
+# Instagram renders an open post two different ways and the check must accept
+# both: clicked from a feed it is a modal (role=dialog wrapping an article),
+# while a directly-loaded /p/ URL is a standalone page with NO article element
+# at all — testing only for the modal shape rejected a genuinely open post. The
+# fallback signal works on either: an open post shows a large image and few
+# links to OTHER posts, whereas the grid is mostly a wall of /p/ links.
+#
 # Like read-caption.sh, this issues NO network request — it inspects a page the
 # user already loaded (see docs/capture/CONTRACT.md).
 DIALOG_STATE="$(osascript 2>/dev/null <<AS || true
@@ -147,7 +154,7 @@ tell application "Google Chrome"
       repeat with t in tabs of w
         if (URL of t) contains "/p/" then
           try
-            return execute t javascript "(function(){return document.querySelector('div[role=\"dialog\"] article, article[role=\"presentation\"]')?'OPEN':'CLOSED';})()"
+            return execute t javascript "(function(){if(document.querySelector('div[role=\"dialog\"] article, article[role=\"presentation\"]'))return 'OPEN';var next=[...document.querySelectorAll('button')].some(b=>b.getAttribute('aria-label')==='Next');if(next)return 'OPEN';var big=[...document.querySelectorAll('img')].filter(i=>i.naturalWidth>=400).length;var links=document.querySelectorAll('a[href*=\"/p/\"]').length;return (big>0&&links<12)?'OPEN':'CLOSED';})()"
           on error errMsg number errNum
             if errNum is -12 then return "JS_BLOCKED"
             return "UNKNOWN"
@@ -278,14 +285,65 @@ AS
 
 # Rewind to slide 1 so the capture starts at the cover regardless of which slide
 # the user happened to leave on (a shared ?img_index=N link opens mid-carousel).
+#
+# The rewind's own result cannot decide auto-vs-manual on its own: on slide 1
+# there is legitimately no "Go back" control, so it returns END for a perfectly
+# healthy carousel. Only NO_JS is conclusive here. Whether we can actually drive
+# the thing is settled afterwards by probing for the Next control itself.
 AUTO_MODE=1
-if [[ "$(carousel_click "Go back")" == "NO_JS" ]]; then
+REWIND="$(carousel_click "Go back")"
+if [[ "$REWIND" == "NO_JS" ]]; then
   AUTO_MODE=0
+  FALLBACK_REASON="Chrome > View > Developer > 'Allow JavaScript from Apple Events' is off"
 else
   for _ in $(seq 1 "$MAX_SLIDES"); do
     [[ "$(carousel_click "Go back")" == "OK" ]] || break
     sleep 0.5
   done
+
+  # Now at slide 1. A carousel MUST offer a Next control here; a single-image
+  # /p/ post will not. Probe without clicking, so this is a real diagnosis
+  # rather than a side effect.
+  #
+  # Distinguishing these two matters: "Instagram renamed the control" and "this
+  # post has one image" both end up in the manual loop, but they are different
+  # problems and only the first is a bug to fix. Saying which one it is turns a
+  # future DOM change into something diagnosable instead of just mysteriously
+  # slow.
+  HAS_NEXT="$(osascript 2>/dev/null <<AS || echo "NO_JS"
+tell application "Google Chrome"
+  repeat with w in windows
+    if (id of w as text) is "${WIN_ID}" then
+      repeat with t in tabs of w
+        if (URL of t) contains "/p/" then
+          try
+            return execute t javascript "(function(){var d=document.querySelector('div[role=\"dialog\"]')||document;var n=[...d.querySelectorAll('button')].some(x=>x.getAttribute('aria-label')==='Next');var big=[...d.querySelectorAll('img')].filter(x=>x.naturalWidth>=400).length;return n?'YES':(big<=1?'SINGLE':'UNKNOWN');})()"
+          on error errMsg number errNum
+            return "NO_JS"
+          end try
+        end if
+      end repeat
+    end if
+  end repeat
+  return "UNKNOWN"
+end tell
+AS
+)"
+  case "$HAS_NEXT" in
+    YES*) ;;  # healthy carousel, stay in auto
+    SINGLE*)
+      AUTO_MODE=0
+      FALLBACK_REASON="no Next control at slide 1 — this looks like a single-image post, not a carousel"
+      ;;
+    NO_JS*)
+      AUTO_MODE=0
+      FALLBACK_REASON="Chrome > View > Developer > 'Allow JavaScript from Apple Events' is off"
+      ;;
+    *)
+      AUTO_MODE=0
+      FALLBACK_REASON="found the post, but could not find its Next control — Instagram may have renamed it (the script looks for a button with aria-label=\"Next\")"
+      ;;
+  esac
 fi
 
 SLIDE=0
@@ -310,8 +368,7 @@ if (( AUTO_MODE )); then
     sleep 1.3
   done
 else
-  echo ">>> could not drive the carousel (Chrome > View > Developer >"
-  echo "    'Allow JavaScript from Apple Events' is off). Falling back to manual."
+  echo ">>> falling back to manual: ${FALLBACK_REASON:-unknown reason}."
   echo ">>> For each slide: bring it up, then press RETURN. 'd' when done."
   echo
   while (( SLIDE < MAX_SLIDES )); do
