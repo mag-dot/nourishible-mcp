@@ -1,6 +1,6 @@
 {
   "name": "nourishible-mcp",
-  "description": "Extract recipes from cooking videos and Xiaohongshu notes with your own AI agent, and save them to your nourishible account.",
+  "description": "Extract recipes from cooking videos, Instagram image carousels, and Xiaohongshu notes with your own AI agent, and save them to your nourishible account.",
   "owner": {
     "name": "nourishible",
     "url": "https://nourishible.com"
@@ -9,7 +9,7 @@
     {
       "name": "nourishible",
       "source": "./",
-      "description": "Extract recipes from cooking videos and Xiaohongshu notes, and save them to your nourishible account — installs the extraction skill and connects the remote MCP server in one step."
+      "description": "Extract recipes from cooking videos, Instagram image carousels, and Xiaohongshu notes, and save them to your nourishible account — installs the extraction skill and connects the remote MCP server in one step."
     }
   ]
 }
