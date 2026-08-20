@@ -1,7 +1,7 @@
 {
   "name": "nourishible",
-  "description": "Extract recipes from cooking videos (YouTube, Instagram) and Xiaohongshu notes, and save them straight to your nourishible account.",
-  "version": "1.1.0",
+  "description": "Extract recipes from cooking videos (YouTube, Instagram), Instagram image carousels, and Xiaohongshu notes, and save them straight to your nourishible account.",
+  "version": "1.2.0",
   "author": {
     "name": "nourishible"
   },

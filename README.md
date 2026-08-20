@@ -1,7 +1,8 @@
 # nourishible-mcp
 
-Extract recipes from any cooking video with your own AI agent — Claude Code, Claude
-Desktop, Cursor, or any other MCP-capable coding agent — and save them straight to your
+Extract recipes from any cooking video — or an Instagram carousel whose recipe is written
+on the images — with your own AI agent (Claude Code, Claude Desktop, Cursor, or any other
+MCP-capable coding agent), and save them straight to your
 [nourishible](https://nourishible.com) library. Your agent does the work (download, watch,
 structure the recipe), so it's free and uncapped: no extraction quota, because it never
 touches nourishible's own compute.
@@ -18,7 +19,10 @@ Two pieces, each doing one job:
   directly; Instagram via local screen capture — see [`docs/capture/`](./docs/capture),
   macOS only), reads on-screen ingredients/steps, cross-references the transcript/caption,
   matches key moments to steps (e.g. "00:20 — add butter and stir"), and picks a good
-  thumbnail. It has no idea what a nourishible account is — it just produces a structured
+  thumbnail. Instagram **carousels** (multi-image `/p/` posts) are handled too: it
+  screenshots each slide and OCRs it on-device, and since one carousel often holds several
+  distinct recipes — one per slide — it can save them as separate recipes, each linking
+  back to its own `?img_index=N` slide. It has no idea what a nourishible account is — it just produces a structured
   recipe.
 - **A hosted, remote MCP server** at `nourishible.com/mcp` — saving, under your account.
   This is the only thing that holds your login and writes to nourishible's database.
@@ -71,7 +75,7 @@ sign-in (your agent pops your browser, you approve) the first time it actually t
 save something — that part can't be skipped, it's what ties the connection to *your*
 account. Everything else — extraction, structuring, saving — just works after that.
 
-Then paste a recipe video/note link and ask your agent to save it.
+Then paste a recipe video, note, or Instagram carousel link and ask your agent to save it.
 
 ## License
 
