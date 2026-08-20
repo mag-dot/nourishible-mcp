@@ -628,6 +628,13 @@ second place for it to drift out of sync and break.
 
 ### Save the recipe
 
+**A save is `save_recipe`/`update_recipe` *and* `set_recipe_thumbnail` together — not done
+until both have succeeded.** This costs nothing extra: Step 5.5 already picked the #1 frame
+from images you already read in Step 2, so setting it is one more tool call on data already
+in hand, not a re-extraction. Never report a recipe as saved, and never move to Step 7,
+having called only `save_recipe`/`update_recipe` — a thumbnail-less "success" is a save you
+still owe the other half of.
+
 1. **Re-run the Step 0.5 dedup check** immediately before saving (see that section).
 2. **New recipe:** call `save_recipe` with the exact JSON from Step 3 (including the
    `timestampSeconds` values from Step 3.5). **Re-extract of an existing one** (Step 0.5
@@ -640,15 +647,19 @@ second place for it to drift out of sync and break.
    This is not a failure — don't retry the call, and don't treat it as an error to work
    around. Use the response's `existingRecipeId`/`existingTitle` the same way Step 0.5
    handles a match: tell the user it's already saved and ask whether they want to
-   re-extract, then `update_recipe` on that id if they do. Skip the rest of this list for
-   this attempt.
-4. **Thumbnail:** call `set_recipe_thumbnail` with the saved/updated recipe's `id`, passing
-   the picked frame's image bytes, base64-encoded, as `imageBase64` — the remote server can't
-   read a file path off your machine, so Read the frame file and encode it yourself before
-   calling the tool. Do this every time there's a frame to give it — a recipe saved without
-   this call shows with no thumbnail in the library.
-5. Read back the tool's response for the real `id`/`slug` nourishible assigned, and use
-   that (not anything you invented) in your Step 6 summary to the user.
+   re-extract, then `update_recipe` on that id if they do (still finishing with the
+   thumbnail step below if you do). Skip the rest of this list for this attempt otherwise.
+4. **Thumbnail — required, immediately, same turn:** call `set_recipe_thumbnail` with the
+   saved/updated recipe's `id`, passing Step 5.5's #1 pick's image bytes, base64-encoded, as
+   `imageBase64` — the remote server can't read a file path off your machine, so Read the
+   frame file and encode it yourself before calling the tool. The one exception is Step
+   5.5 genuinely finding zero usable frames (no food visible in any frame, not just "the
+   best one is mediocre") — in that specific case only, say plainly in your Step 6 summary
+   that the recipe saved with no thumbnail and why, rather than silently skipping the call
+   or fabricating a substitute (see Step 5.5's note on platform-provided thumbnails).
+5. Read back each tool's response for the real `id`/`slug` (and, once thumbnailed, confirm
+   the thumbnail is set) that nourishible assigned, and use that — not anything you
+   invented — in your Step 6 summary to the user.
 6. **If the response includes a `safety` field** (nourishible computes this server-side
    for recipes that read as baby/infant food — you don't need to do anything to trigger
    it), relay its `flags` plainly in your Step 6 summary: each flag's `message`, verbatim.
@@ -671,8 +682,36 @@ re-extract or adjust, leave it.
   the API key — same first-run defaults as Step 0 (proceed with `--no-whisper`).
 - **No transcript available (YouTube)** → captions missing AND (no Whisper key OR Whisper
   API failed). Proceed frames-only and tell the user.
-- **Download fails (YouTube)** → yt-dlp's error goes to stderr. If it's a login-required or
-  region-locked video, tell the user plainly; do not keep retrying.
+- **Download fails (YouTube)** → `download.py` retries alternate yt-dlp player clients and
+  downloaders automatically; if every attempt fails (common signature: SSL/TLS to
+  `googlevideo.com`), `watch.py` keeps captions/metadata and falls back to the official
+  YouTube thumbnail as a single frame. Tell the user plainly, suggest
+  `python3 scripts/setup.py` (installs `curl_cffi`), `WATCH_COOKIES_FROM_BROWSER=chrome`,
+  and upgrading yt-dlp — do not hand-roll infinite retries beyond what the scripts already do.
+  Login-required or region-locked videos are a different failure; say so explicitly.
+- **Blocked by this environment's own network policy** (any platform) — some agents run in a
+  sandbox whose outbound traffic goes through a proxy with its own fixed domain allowlist,
+  separate from anything this skill or the user controls. The signature is a connection
+  refused/blocked *before* `yt-dlp`/the download even starts trying — e.g. a proxy
+  `403`/`host_not_allowed`-style error naming the host, not a normal HTTP error from the
+  platform itself. When you see this:
+  - **Don't retry it, and don't try to work around it** — not via `curl`, not via an
+    alternate downloader or a different tool. The same proxy restriction applies to every
+    outbound request this process makes, so a workaround just fails the same way one call
+    later, having burned a turn to learn nothing new.
+  - **Don't confuse this with a real download/login/region failure** (the bullet above) —
+    a proxy block happens before the platform is ever reached, so nothing about the video
+    itself (privacy, region, login) is the cause. Say so plainly, so the user doesn't waste
+    time on the wrong fix (an account, a VPN, a different URL).
+  - **This can't be fixed from inside the skill or the install flow** — it's the hosting
+    environment's own egress policy (an account/environment setting on whatever platform is
+    running this agent), not a nourishible or `recipe-nourishible` limitation. Say plainly
+    that the specific domain would need to be added to that environment's allowlist, and
+    that's a change only the user (or whoever administers that environment) can make.
+  - **Offer the fallback that still works:** ask the user to send the note/video's content
+    directly instead — a screenshot or export of the images and text, or the video file
+    itself — and structure the recipe from that, same as any other input. This keeps the
+    skill useful even when the fetch is blocked outright.
 - **`capture-only.sh` fails (Instagram)** — this is a different failure surface than the
   YouTube path:
   - No window found ("Could not find a browser window playing Instagram") — the post
@@ -782,6 +821,13 @@ letting it surprise the user mid-run:
   about how it acquires content.
 
 Review all of the above before first use to verify behavior.
+
+**A note on restricted environments:** some agents run in a sandbox with its own outbound
+network allowlist (a cloud/managed execution environment, not this skill or nourishible).
+If the source platform's domain, `xhscdn.com`, `api.groq.com`/`api.openai.com`, or the
+nourishible MCP server itself isn't on that list, the relevant request is blocked at the
+proxy before this skill's own logic ever runs — see "Blocked by this environment's own
+network policy" under Failure modes above for how that should be handled and reported.
 
 ## Attribution
 

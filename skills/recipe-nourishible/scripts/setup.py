@@ -81,6 +81,10 @@ OPENAI_API_KEY=
 # Or point at an exported Netscape-format cookies.txt (takes precedence):
 # WATCH_COOKIES_FILE=/path/to/cookies.txt
 #
+# YouTube video CDN failures (SSL/TLS to googlevideo.com) often clear up
+# with browser cookies + an up-to-date yt-dlp. Run setup.py to install
+# curl_cffi into the Homebrew yt-dlp environment.
+#
 # NOTE: this does NOT apply to Instagram. yt-dlp's Instagram extractor
 # returns HTTP 400 even with valid, cookie-authenticated requests (tested
 # 15 Aug 2026 — upstream breakage, not a config gap). Instagram is handled
@@ -242,6 +246,50 @@ def _install_macos(missing: list[str]) -> tuple[bool, str]:
     if result.returncode != 0:
         return False, f"brew install failed with exit code {result.returncode}"
     return True, f"installed via brew: {', '.join(pkgs)}"
+
+
+def _yt_dlp_python() -> Path | None:
+    """Return the Python interpreter used by the yt-dlp on PATH, if known."""
+    yt = _which("yt-dlp")
+    if not yt:
+        return None
+    try:
+        first = Path(yt).read_text(encoding="utf-8", errors="ignore").splitlines()[0]
+    except OSError:
+        return None
+    if not first.startswith("#!"):
+        return None
+    interp = first[2:].strip()
+    if interp.startswith("/"):
+        return Path(interp) if Path(interp).is_file() else None
+    resolved = _which(interp)
+    return Path(resolved) if resolved else None
+
+
+def _yt_dlp_has_curl_cffi() -> bool:
+    py = _yt_dlp_python()
+    if py is None:
+        return False
+    result = subprocess.run(
+        [str(py), "-c", "import curl_cffi"],
+        capture_output=True,
+    )
+    return result.returncode == 0
+
+
+def _install_yt_dlp_extras() -> tuple[bool, str]:
+    """Install curl_cffi into Homebrew yt-dlp's venv (macOS) for TLS impersonation."""
+    py = _yt_dlp_python()
+    if py is None:
+        return False, "yt-dlp python interpreter not found — skip curl_cffi install"
+    if _yt_dlp_has_curl_cffi():
+        return True, "curl_cffi already available to yt-dlp"
+    cmd = [str(py), "-m", "pip", "install", "-U", "curl_cffi>=0.10,<0.16"]
+    print(f"[setup] running: {' '.join(cmd)}", file=sys.stderr)
+    result = subprocess.run(cmd)
+    if result.returncode != 0:
+        return False, f"curl_cffi install failed (exit {result.returncode})"
+    return True, "installed curl_cffi for yt-dlp (better YouTube TLS/impersonation)"
 
 
 def _install_hint_linux(missing: list[str]) -> str:
@@ -619,6 +667,10 @@ def cmd_install() -> int:
             print(f"[setup] unsupported platform ({system}) for auto-install. Install manually:", file=sys.stderr)
             print(f"  missing: {', '.join(missing)}", file=sys.stderr)
             return 2
+
+    if _which("yt-dlp"):
+        ok, msg = _install_yt_dlp_extras()
+        print(f"[setup] {msg}", file=sys.stderr)
 
     created = _scaffold_env()
     if created:
