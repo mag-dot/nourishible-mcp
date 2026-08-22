@@ -409,17 +409,55 @@ If the user's own browser is not already open on the post, ask them to open it. 
    the exact equivalent of the local path's `caption.txt`, and the same precedence applies
    (see Step 2): it is often more complete than anything on screen, and it is real text
    rather than OCR, so prefer it over pixels wherever the two disagree.
-4. **Prepare the frame region.** Grab the `<video>` element, pause it, and note its
-   bounding rect. Enlarging it to fill the viewport height buys real resolution — the
-   on-screen ingredient callouts are the whole point, and a thumbnail-sized video panel
-   will not render them legibly. Record the viewport size too: screenshot pixels and CSS
-   pixels differ by the device pixel ratio, and your capture region must be in the
-   screenshot's coordinate space, not the page's.
-5. **Capture frames by seeking.** Set `currentTime`, wait ~1s for the frame to paint, then
-   capture a **zoomed screenshot of the video region only** — cropping to the video is
-   what gets you a usable frame instead of a screenshot of a browser window. Batch these
-   (seek → wait → capture, several per call) if your browser tool supports batching;
-   one round trip per frame is painfully slow otherwise.
+4. **Rotate the video before capturing — this is the single biggest quality lever.**
+   Reels are portrait (typically 1080×1920) and browser viewports are landscape. A
+   portrait video fitted into a landscape viewport occupies a *narrow vertical strip*: on
+   a 1298×724 viewport it renders about **440px wide**, no matter how you zoom. Your
+   screenshot tool will happily hand back a larger image than that, but those extra pixels
+   are **upscaled, not captured** — you get a soft, mushy frame and, worse, a pixel width
+   that passes Step 5.5's ≥512px check while carrying less than half that in real detail.
+
+   Fix it by rotating the video 90° so its long axis lands on the viewport's wide axis,
+   then rotating the image back after capture. On the same viewport this lifts real
+   capture from ~440px to ~1440px along the long edge — roughly **3× the linear detail**.
+   Composite onto your own canvas so the platform's UI chrome isn't overlaid on the frame:
+
+   ```javascript
+   const v = document.querySelectorAll('video')[0]; v.pause();
+   v.style.cssText = 'position:fixed;top:0;left:0;width:2px;height:2px;opacity:0.01;';
+   const c = document.createElement('canvas');
+   document.documentElement.appendChild(c);        // NOT body — body gets hidden below
+   const H = innerHeight, W = Math.round(H * 16 / 9);   // 16:9 once rotated
+   c.style.cssText = `position:fixed;top:0;left:0;width:${W}px;height:${H}px;z-index:2147483647;background:#000;`;
+   c.width = W * 2; c.height = H * 2;
+   document.body.style.visibility = 'hidden';      // hide the site's own UI
+   window.__draw = async (t) => {
+     await new Promise(r => { v.onseeked = r; v.currentTime = t; });
+     const x = c.getContext('2d');
+     x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,c.width,c.height);
+     x.translate(c.width/2, c.height/2); x.rotate(Math.PI/2);
+     x.drawImage(v, -c.height/2, -c.width/2, c.height, c.width);
+     x.setTransform(1,0,0,1,0,0);
+   };
+   ```
+
+   Then `Image.transpose(Image.ROTATE_90)` in PIL undoes the clockwise canvas rotation.
+   **Restore the page afterwards** (remove the canvas, clear the inline styles, unhide the
+   body) — you altered a tab the user is sitting in.
+
+   Note the coordinate space: screenshot pixels and CSS pixels differ, and not by
+   `devicePixelRatio` — tools commonly cap or rescale. Measure the ratio once (screenshot
+   width ÷ `innerWidth`) and scale your capture region by it.
+
+5. **Capture frames by seeking.** Call your draw helper, wait ~1s for the paint, then
+   capture a **zoomed screenshot of the canvas region only**. Batch these (seek → wait →
+   capture, several per call) if your browser tool supports batching; one round trip per
+   frame is painfully slow otherwise.
+
+   **Sanity-check the real resolution before trusting it.** Ask what the video actually
+   occupied on screen, not what your screenshot tool reported — if those disagree, you are
+   looking at an upscale. `videoWidth`/`videoHeight` tell you the native size; the rendered
+   box tells you what was truly sampled.
 
    **Seeking is only permitted inside content the human already played.** Ask the user to
    let the reel run through once before you start; then every seek reads a buffer their
@@ -773,7 +811,11 @@ visible, dominated by a hand/utensil obscuring the food, transition frames (mid-
 part-black), or where text/graphics cover a substantial part of the dish itself (a short
 caption along the bottom edge is fine, a title card plastered across the food is not).
 
-**Check your #1 pick's actual pixel width before moving on** — `identify` (ImageMagick) or
+**A pixel-width check only counts if those pixels were captured, not upscaled.** A frame
+screenshotted from a portrait video in a landscape viewport can report 750px while
+carrying ~440px of real detail; resizing or zooming after the fact never adds information
+back. On the agent-controlled-browser path, capture rotated (Step 1) so the number and the
+detail agree. **Check your #1 pick's actual pixel width before moving on** — `identify` (ImageMagick) or
 `python3 -c "from PIL import Image; print(Image.open('<path>').size)"` on the frame file.
 Composition can look right in a downscaled preview and still be a soft, blurry image once
 it's the full-size card/OG thumbnail everyone sees — Step 1's `--resolution 1024` should
@@ -880,7 +922,11 @@ second place for it to drift out of sync and break.
 
    Crop to the dish before resizing rather than just shrinking the whole frame — spending
    the pixels on food instead of letterboxing buys back most of the quality the
-   compression costs. If your encoded string still exceeds ~25k characters, compress
+   compression costs. Crop away the burnt-in caption too where the composition allows
+   (many reels keep the dish clear of the text band), so the card is the food rather than
+   the food plus someone else's subtitles. At this size the source frame's sharpness
+   matters far more than the quality setting: compressing an upscaled frame wastes bytes
+   on blur, so fix Step 1's capture before trading away quality here. If your encoded string still exceeds ~25k characters, compress
    further; do **not** save the recipe thumbnail-less just because the first attempt was
    too big, and do not fall back to a platform CDN URL (see Step 5.5).
 5. Read back the tool's response for the real `id`/`slug` nourishible assigned, and use
