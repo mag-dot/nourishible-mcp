@@ -29,6 +29,26 @@ LOGIN_SENSITIVE_HOSTS = ("instagram.com", "www.instagram.com")
 # see download_xhs_images() below.
 XIAOHONGSHU_HOSTS = ("xiaohongshu.com", "www.xiaohongshu.com", "xhslink.cn")
 
+YOUTUBE_HOSTS = ("youtube.com", "www.youtube.com", "youtu.be", "m.youtube.com")
+
+# Extra yt-dlp flags tried in order when a YouTube video stream fails (SSL 403,
+# SABR, PO-token gaps, …). Metadata/captions are fetched separately first.
+YOUTUBE_DOWNLOAD_STRATEGIES: list[list[str]] = [
+    [],
+    ["--extractor-args", "youtube:player_client=android,web"],
+    ["-N", "1"],
+    ["--extractor-args", "youtube:player_client=tv_embedded,web"],
+    ["--legacy-server-connect"],
+]
+
+_SSL_MARKERS = (
+    "UNEXPECTED_EOF_WHILE_READING",
+    "SSL_ERROR_SYSCALL",
+    "SSL routines",
+    "TLS connect error",
+    "SSLEOFError",
+)
+
 
 def _cookie_args(cookies_from_browser: str | None, cookies_file: str | None) -> list[str]:
     """Build the yt-dlp cookie flags, preferring an explicit cookies file."""
@@ -47,6 +67,39 @@ def is_login_sensitive(url: str) -> bool:
 def is_xiaohongshu(url: str) -> bool:
     host = urlparse(url).netloc.lower()
     return any(host == h or host.endswith("." + h) for h in XIAOHONGSHU_HOSTS)
+
+
+def is_youtube(url: str) -> bool:
+    host = urlparse(url).netloc.lower()
+    if host == "youtu.be":
+        return True
+    return any(host == h or host.endswith("." + h) for h in YOUTUBE_HOSTS)
+
+
+def _looks_like_ssl_error(text: str) -> bool:
+    upper = text.upper()
+    return any(marker.upper() in upper for marker in _SSL_MARKERS)
+
+
+def _brew_curl_bin() -> str | None:
+    for candidate in (
+        "/opt/homebrew/opt/curl/bin/curl",
+        "/usr/local/opt/curl/bin/curl",
+    ):
+        if Path(candidate).is_file():
+            return candidate
+    return None
+
+
+def _curl_downloader_args() -> list[str]:
+    """Prefer Homebrew curl (OpenSSL) over macOS /usr/bin/curl (LibreSSL)."""
+    curl_bin = _brew_curl_bin() or shutil.which("curl")
+    if not curl_bin:
+        return []
+    return [
+        "--downloader", "curl",
+        "--downloader-args", f"curl:{curl_bin} -L --retry 5 --retry-all-errors --compressed",
+    ]
 
 
 def probe_xhs_note(url: str) -> dict:
@@ -243,23 +296,17 @@ def _read_info(info_path: Path, url: str) -> dict:
     return info
 
 
-def download_url(
+def _base_download_cmd(
     url: str,
     out_dir: Path,
-    audio_only: bool = False,
-    cookies_from_browser: str | None = None,
-    cookies_file: str | None = None,
-) -> dict:
-    if shutil.which("yt-dlp") is None:
-        raise SystemExit("yt-dlp is not installed. Install with: brew install yt-dlp")
-
-    out_dir.mkdir(parents=True, exist_ok=True)
+    audio_only: bool,
+    cookies_from_browser: str | None,
+    cookies_file: str | None,
+) -> list[str]:
     output_template = str(out_dir / "video.%(ext)s")
-
     fmt = "ba/bestaudio" if audio_only else "bv*[height<=720]+ba/b[height<=720]/bv+ba/b"
-    cmd = [
+    return [
         "yt-dlp",
-        "-N", "8",
         "-f", fmt,
         "--merge-output-format", "mp4",
         "--write-info-json",
@@ -276,31 +323,110 @@ def download_url(
         url,
     ]
 
-    # yt-dlp may exit non-zero if a subtitle variant fails (e.g. 429) even when
-    # the video itself downloaded fine. Treat "video file present" as success.
-    result = subprocess.run(cmd, stdout=sys.stderr, stderr=sys.stderr)
-    video = _pick_video(out_dir)
-    if video is None:
-        hint = ""
-        if is_login_sensitive(url) and not (cookies_from_browser or cookies_file):
-            hint = (
-                " — this looks like Instagram; many Reels/Stories require a logged-in "
-                "session. Set WATCH_COOKIES_FROM_BROWSER=chrome in ~/.config/watch/.env "
-                "(or firefox/safari/edge), or pass --cookies-from-browser."
-            )
-        raise SystemExit(
-            f"yt-dlp did not produce a video file in {out_dir} (exit {result.returncode}){hint}"
+
+def _run_yt_dlp(cmd: list[str]) -> tuple[int, str]:
+    result = subprocess.run(cmd, stdout=sys.stderr, stderr=subprocess.PIPE, text=True)
+    err = (result.stderr or "").strip()
+    return result.returncode, err
+
+
+def _youtube_strategy_list() -> list[list[str]]:
+    strategies = [list(s) for s in YOUTUBE_DOWNLOAD_STRATEGIES]
+    curl_args = _curl_downloader_args()
+    if curl_args:
+        strategies.append(curl_args)
+        strategies.append(["-N", "1", *curl_args])
+    return strategies
+
+
+def download_youtube_thumbnail(
+    url: str,
+    out_dir: Path,
+    cookies_from_browser: str | None = None,
+    cookies_file: str | None = None,
+) -> str | None:
+    """Best-effort YouTube still when the video stream cannot be downloaded."""
+    if shutil.which("yt-dlp") is None:
+        return None
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    output_template = str(out_dir / "thumb")
+    cmd = [
+        "yt-dlp",
+        "--skip-download",
+        "--write-thumbnail",
+        "--convert-thumbnails", "jpg",
+        "--no-playlist",
+        *_cookie_args(cookies_from_browser, cookies_file),
+        "-o", output_template,
+        "--",
+        url,
+    ]
+    subprocess.run(cmd, stdout=sys.stderr, stderr=sys.stderr)
+    for candidate in sorted(out_dir.glob("thumb*.jpg")):
+        return str(candidate)
+    for candidate in sorted(out_dir.glob("thumb*")):
+        if candidate.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}:
+            return str(candidate)
+    return None
+
+
+def download_url(
+    url: str,
+    out_dir: Path,
+    audio_only: bool = False,
+    cookies_from_browser: str | None = None,
+    cookies_file: str | None = None,
+) -> dict:
+    if shutil.which("yt-dlp") is None:
+        raise SystemExit("yt-dlp is not installed. Install with: brew install yt-dlp")
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    base_cmd = _base_download_cmd(
+        url, out_dir, audio_only, cookies_from_browser, cookies_file,
+    )
+
+    strategies: list[list[str]] = [[]]
+    if is_youtube(url):
+        strategies = _youtube_strategy_list()
+
+    last_error = ""
+    for idx, extra in enumerate(strategies):
+        if idx:
+            label = " ".join(extra[:4])
+            print(f"[watch] retrying download ({idx + 1}/{len(strategies)}): {label}…", file=sys.stderr)
+        cmd = [*base_cmd[:1], *extra, *base_cmd[1:]]
+        code, err = _run_yt_dlp(cmd)
+        last_error = err
+        video = _pick_video(out_dir)
+        if video is not None:
+            subtitle = _pick_subtitle(out_dir)
+            info = _read_info(out_dir / "video.info.json", url)
+            return {
+                "video_path": str(video),
+                "subtitle_path": str(subtitle) if subtitle else None,
+                "info": info or {"url": url},
+                "downloaded": True,
+            }
+
+    hint = ""
+    if is_login_sensitive(url) and not (cookies_from_browser or cookies_file):
+        hint = (
+            " — this looks like Instagram; many Reels/Stories require a logged-in "
+            "session. Set WATCH_COOKIES_FROM_BROWSER=chrome in ~/.config/watch/.env "
+            "(or firefox/safari/edge), or pass --cookies-from-browser."
         )
-
-    subtitle = _pick_subtitle(out_dir)
-    info = _read_info(out_dir / "video.info.json", url)
-
-    return {
-        "video_path": str(video),
-        "subtitle_path": str(subtitle) if subtitle else None,
-        "info": info or {"url": url},
-        "downloaded": True,
-    }
+    elif is_youtube(url) and _looks_like_ssl_error(last_error):
+        hint = (
+            " — YouTube's video CDN rejected the connection (SSL/TLS). Captions/metadata "
+            "may still be available. Try: `brew upgrade yt-dlp`, run "
+            "`python3 skills/recipe-nourishible/scripts/setup.py` to install curl_cffi, "
+            "set WATCH_COOKIES_FROM_BROWSER=chrome, or use a different network/VPN. "
+            "watch.py will fall back to the official thumbnail when the stream fails."
+        )
+    raise SystemExit(
+        f"yt-dlp did not produce a video file in {out_dir} (exit {code}){hint}"
+    )
 
 
 def download(

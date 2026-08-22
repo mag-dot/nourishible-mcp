@@ -7,6 +7,7 @@ then Reads each frame path to see the video.
 from __future__ import annotations
 
 import argparse
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -19,9 +20,11 @@ from config import frame_cap, get_config  # noqa: E402
 from download import (  # noqa: E402
     download,
     download_xhs_images,
+    download_youtube_thumbnail,
     fetch_captions,
     is_url,
     is_xiaohongshu,
+    is_youtube,
     probe_xhs_note,
 )
 from frames import MAX_FPS, auto_fps, auto_fps_focus, extract_at_timestamps, extract_keyframes, extract_scene_or_uniform, format_time, get_metadata, merge_frames, parse_time, parse_timestamps  # noqa: E402
@@ -210,6 +213,7 @@ def main() -> int:
     # --timestamps needs the video for frame grabs, so it overrides the
     # transcript-mode download skip (and forces a full, not audio-only, fetch).
     audio_only = detail == "transcript" and not cue_timestamps
+    thumbnail_fallback: str | None = None
     if detail == "transcript" and transcript_segments and not cue_timestamps:
         video_path = None
     else:
@@ -219,17 +223,35 @@ def main() -> int:
                 else "[watch] downloading video via yt-dlp…",
                 file=sys.stderr,
             )
-            dl = download(
-                args.source,
-                work / "download",
-                audio_only=audio_only,
-                cookies_from_browser=cookies_from_browser,
-                cookies_file=cookies_file,
-            )
+            try:
+                dl = download(
+                    args.source,
+                    work / "download",
+                    audio_only=audio_only,
+                    cookies_from_browser=cookies_from_browser,
+                    cookies_file=cookies_file,
+                )
+            except SystemExit as exc:
+                if is_youtube(args.source) and not audio_only:
+                    print(f"[watch] video download failed: {exc}", file=sys.stderr)
+                    print(
+                        "[watch] falling back to official YouTube thumbnail (captions/metadata kept)…",
+                        file=sys.stderr,
+                    )
+                    thumbnail_fallback = download_youtube_thumbnail(
+                        args.source,
+                        work / "download",
+                        cookies_from_browser=cookies_from_browser,
+                        cookies_file=cookies_file,
+                    )
+                    if not thumbnail_fallback:
+                        raise
+                else:
+                    raise
         else:
             print("[watch] using local file…", file=sys.stderr)
             dl = download(args.source, work / "download")
-        video_path = dl["video_path"]
+        video_path = dl.get("video_path")
 
     meta = get_metadata(video_path) if video_path else {
         "duration_seconds": float((dl.get("info") or {}).get("duration") or 0),
@@ -329,6 +351,24 @@ def main() -> int:
 
     if cue_frames:
         frames = merge_frames(frames, cue_frames)
+
+    if thumbnail_fallback and not frames:
+        frames_dir = work / "frames"
+        frames_dir.mkdir(parents=True, exist_ok=True)
+        dest = frames_dir / "thumb_0000.jpg"
+        shutil.copy2(thumbnail_fallback, dest)
+        frames = [{
+            "path": str(dest),
+            "timestamp_seconds": 0.0,
+            "reason": "youtube-thumbnail-fallback",
+        }]
+        frame_meta = {
+            "engine": "thumbnail",
+            "candidate_count": 1,
+            "selected_count": 1,
+            "fallback": True,
+        }
+        print(f"[watch] using thumbnail fallback frame: {dest}", file=sys.stderr)
 
     if not transcript_segments and dl.get("subtitle_path"):
         try:
@@ -434,6 +474,15 @@ def main() -> int:
             f"under `{detail}` detail — its cap spreads thin across the full clip. For better results, "
             "re-run with `--start HH:MM:SS --end HH:MM:SS` to zoom into a section, or use "
             "`--detail token-burner` to keep every scene-change frame across the whole video."
+        )
+
+    if thumbnail_fallback:
+        print()
+        print(
+            "> **Warning:** Video download failed (YouTube CDN SSL/network). Using the official "
+            "YouTube thumbnail as the only visual frame — step timestamps still come from captions. "
+            "For full frame extraction, upgrade yt-dlp, run setup.py (installs curl_cffi), try "
+            "WATCH_COOKIES_FROM_BROWSER=chrome, or switch networks/VPN."
         )
 
     print()

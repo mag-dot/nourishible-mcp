@@ -141,12 +141,21 @@ dependencies on first use — don't pre-install anything here.
 2. **MCP:** after whatever restart the client needs, `save_recipe`, `update_recipe`,
    `set_recipe_thumbnail`, `list_my_recipes`, `get_my_recipe`, `search_recipes`, and
    `get_recipe` should be visible as callable tools.
-3. **Sign-in:** don't try to trigger it now. The first time a save actually runs, the
-   agent opens the user's browser to a nourishible sign-in page and an approve screen.
-   That step is tied to the user's own account and can't be done on their behalf — say
-   it's coming, so it isn't a surprise.
+3. **Sign-in: trigger it now, don't defer it.** Call `list_my_recipes` (harmless, read-only,
+   costs the user nothing) to finish the install with the account actually connected instead
+   of leaving it as a surprise on the user's first real save. This call needs the user's own
+   account, so it's what starts the agent's browser-based OAuth flow — a real nourishible
+   sign-in page, then an "Allow" screen naming this connection. Tell the user before calling
+   it ("one more step — this'll open your browser to sign in and approve the connection")
+   rather than opening a browser on them with no warning. If the client can't complete OAuth
+   from a background tool call (some GUI clients require the user to trigger the first
+   authenticated action themselves), say so plainly and tell the user to paste a video link
+   once to finish connecting, rather than pretending this step is done.
+   **Never construct this sign-in URL by hand** — `nourishible.com/connect` only works with
+   the OAuth parameters the agent's own MCP client generates during this handshake; a bare
+   link to it is a dead end, not a shortcut.
 
 Then tell the user, in a few lines: what you installed, anything they still have to do
-themselves (restart, GUI steps, the `.skill` upload), and that they can now paste a
-cooking video or Instagram carousel link and ask for it to be saved to their nourishible
-library.
+themselves (restart, GUI steps, the `.skill` upload, finishing sign-in), and that they can
+now paste a cooking video or Instagram carousel link and ask for it to be saved to their
+nourishible library.
