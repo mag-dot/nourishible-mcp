@@ -16,8 +16,9 @@ Two pieces, each doing one job:
 
 - **[`skills/recipe-nourishible/`](./skills/recipe-nourishible)** — extraction. This is
   what runs *in your agent*: it watches a video or note (YouTube and Xiaohongshu/XHS
-  directly; Instagram via local screen capture — see [`docs/capture/`](./docs/capture),
-  macOS only), reads on-screen ingredients/steps, cross-references the transcript/caption,
+  directly; Instagram off a screen, either via local macOS capture or via an
+  agent-controlled browser on any platform — see [`docs/capture/`](./docs/capture)),
+  reads on-screen ingredients/steps, cross-references the transcript/caption,
   matches key moments to steps (e.g. "00:20 — add butter and stir"), and picks a good
   thumbnail. Instagram **carousels** (multi-image `/p/` posts) are handled too: it
   screenshots each slide and OCRs it on-device, and since one carousel often holds several

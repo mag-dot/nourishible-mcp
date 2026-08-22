@@ -157,13 +157,36 @@ Once dependencies, the API-key choice, and this preference are handled, write or
 
 Not for: general video Q&A unrelated to recipes, blog/website recipe scraping (out of
 scope — no download step applies), TikTok (not currently supported by the bundled
-download script). Instagram carousels ARE supported, but only via the screen-capture
-path below — there is no fetch path for them either.
+download script). Instagram carousels ARE supported, but only via one of the two
+screen-based paths below — there is no fetch path for them either.
 
-**Instagram is macOS-only.** YouTube and Xiaohongshu work everywhere this skill runs.
-Instagram goes through local screen capture (Step 1), which needs macOS's Screen Recording
-permission — there's no equivalent on Linux/Windows. Tell the user plainly if their
-platform isn't Darwin and they paste an Instagram link; don't attempt it anyway.
+**Instagram has no fetch path — it comes off a screen, by one of two routes.** YouTube
+and Xiaohongshu work everywhere this skill runs. Instagram does too, but only if you have
+a real browser someone can see:
+
+- **Local macOS screen capture** (`### Instagram — local screen capture`, Step 1) — the
+  original path and the higher-fidelity one: real sampled frames, on-device Vision OCR,
+  and a Whisper audio transcript. Needs macOS, Screen Recording permission, and Chrome on
+  the *same machine the skill's scripts run on*.
+- **Agent-controlled browser** (`### Instagram — agent-controlled browser`, Step 1) —
+  works from **any** platform, including an agent running in a remote Linux container with
+  no macOS anywhere in reach, provided it can drive a Chrome the user is sitting in front
+  of (Claude in Chrome, or any MCP browser tool exposing screenshots + page reads). Yields
+  caption text and video frames; **no audio transcript**.
+
+**Choose by what's actually reachable, not by what OS you happen to be running on.** An
+agent on Linux can still drive a macOS Chrome through a browser extension — that is the
+common remote case, and it works. The decision rule:
+
+1. Can you run `scripts/capture/capture-only.sh` on a Darwin machine? Use local capture.
+2. Otherwise, do you have browser tools pointed at a Chrome the user can see? Use the
+   agent-controlled browser path.
+3. Only if neither is true, tell the user plainly that Instagram can't be extracted from
+   where you're running, and offer the local-agent route (see that path's failure modes).
+
+Do not conclude "Instagram is macOS-only" and stop just because *your own* shell reports
+Linux — check for browser tools first. That mistake makes the skill look broken on every
+remote agent.
 
 **Xiaohongshu content is often a photo carousel, not a video.** A large share of XHS
 recipe content is a "图文" (photo/text) note — a sequence of images plus a text
@@ -279,8 +302,11 @@ action is often only correct/visible at one specific frame, not "somewhere in th
 
 ### Instagram — local screen capture
 
-Requires macOS (Screen Recording is a macOS-only mechanism). This is a **separate,
-opt-in** profile from the YouTube setup above — a user who only ever pastes YouTube links
+**This is one of two Instagram paths.** It requires macOS (Screen Recording is a
+macOS-only mechanism) *on the machine running these scripts*. If that isn't where you are
+— a remote agent, a Linux/Windows user, a container — skip to
+`### Instagram — agent-controlled browser` below rather than concluding Instagram is
+unsupported. This is a **separate, opt-in** profile from the YouTube setup above — a user who only ever pastes YouTube links
 is never asked to install any of this. Verify it's ready before capturing:
 
 ```bash
@@ -344,6 +370,136 @@ walking a list of posts unattended — those cross from "recording your own scre
 
 **If `capture-only.sh` reports it couldn't find the reel window**, the post likely isn't
 open and playing in a visible Chrome tab — ask the user to check, don't retry blindly.
+
+### Instagram — agent-controlled browser (any platform)
+
+Use this when you can't run the macOS capture scripts — you're a remote/cloud agent, the
+user is on Linux or Windows, or the skill's shell simply isn't the machine Chrome lives
+on. It needs browser-automation tools wired to a Chrome the **user** is looking at
+(Claude in Chrome's `mcp__claude-in-chrome__*`, or any MCP browser server offering
+screenshots, page reads, and script evaluation). It needs no Screen Recording permission,
+no `swiftc`, no Whisper, and no local `ffmpeg` — everything comes through the browser.
+
+**The acquisition rule is identical, and it is not negotiable.** Read
+[`docs/capture/CONTRACT.md`](../../docs/capture/CONTRACT.md) before touching this path. In
+short:
+
+- **The user navigates to the post and presses play. You never do.** Do not call a
+  `navigate` tool with an instagram.com URL. Do not click the play button. Do not open a
+  post from a list, a saved collection, or a profile grid. Ask, then wait.
+- Once the human has played it, reading that rendered page and screenshotting it is the
+  same permitted act as recording their screen — you are the recorder, not the requester.
+- **Never batch.** One post, because the user asked for that post. Walking several posts
+  in a session is the pattern enforcement is built to catch, no matter how the frames are
+  captured.
+
+If the user's own browser is not already open on the post, ask them to open it. That ask
+*is* the mechanism, not friction to design away.
+
+#### Procedure
+
+1. **Pick the browser.** List the connected browsers and have the user choose one (Claude
+   in Chrome requires this before any browser action). Note the platform it reports — a
+   macOS Chrome here means the local-capture path may also be available if your scripts
+   can reach that machine; usually they can't, which is why you're here.
+2. **Locate the post's tab.** Get the tab context and look for an `instagram.com/reels/…`
+   or `/p/…` URL. If it isn't there, ask the user to open the post and play it, then check
+   again. Never navigate there yourself.
+3. **Read the caption.** Pull it from the page's own text or `og:description` — this is
+   the exact equivalent of the local path's `caption.txt`, and the same precedence applies
+   (see Step 2): it is often more complete than anything on screen, and it is real text
+   rather than OCR, so prefer it over pixels wherever the two disagree.
+4. **Rotate the video before capturing — this is the single biggest quality lever.**
+   Reels are portrait (typically 1080×1920) and browser viewports are landscape. A
+   portrait video fitted into a landscape viewport occupies a *narrow vertical strip*: on
+   a 1298×724 viewport it renders about **440px wide**, no matter how you zoom. Your
+   screenshot tool will happily hand back a larger image than that, but those extra pixels
+   are **upscaled, not captured** — you get a soft, mushy frame and, worse, a pixel width
+   that passes Step 5.5's ≥512px check while carrying less than half that in real detail.
+
+   Fix it by rotating the video 90° so its long axis lands on the viewport's wide axis,
+   then rotating the image back after capture. On the same viewport this lifts real
+   capture from ~440px to ~1440px along the long edge — roughly **3× the linear detail**.
+   Composite onto your own canvas so the platform's UI chrome isn't overlaid on the frame:
+
+   ```javascript
+   const v = document.querySelectorAll('video')[0]; v.pause();
+   v.style.cssText = 'position:fixed;top:0;left:0;width:2px;height:2px;opacity:0.01;';
+   const c = document.createElement('canvas');
+   document.documentElement.appendChild(c);        // NOT body — body gets hidden below
+   const H = innerHeight, W = Math.round(H * 16 / 9);   // 16:9 once rotated
+   c.style.cssText = `position:fixed;top:0;left:0;width:${W}px;height:${H}px;z-index:2147483647;background:#000;`;
+   c.width = W * 2; c.height = H * 2;
+   document.body.style.visibility = 'hidden';      // hide the site's own UI
+   window.__draw = async (t) => {
+     await new Promise(r => { v.onseeked = r; v.currentTime = t; });
+     const x = c.getContext('2d');
+     x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,c.width,c.height);
+     x.translate(c.width/2, c.height/2); x.rotate(Math.PI/2);
+     x.drawImage(v, -c.height/2, -c.width/2, c.height, c.width);
+     x.setTransform(1,0,0,1,0,0);
+   };
+   ```
+
+   Then `Image.transpose(Image.ROTATE_90)` in PIL undoes the clockwise canvas rotation.
+   **Restore the page afterwards** (remove the canvas, clear the inline styles, unhide the
+   body) — you altered a tab the user is sitting in.
+
+   Note the coordinate space: screenshot pixels and CSS pixels differ, and not by
+   `devicePixelRatio` — tools commonly cap or rescale. Measure the ratio once (screenshot
+   width ÷ `innerWidth`) and scale your capture region by it.
+
+5. **Capture frames by seeking.** Call your draw helper, wait ~1s for the paint, then
+   capture a **zoomed screenshot of the canvas region only**. Batch these (seek → wait →
+   capture, several per call) if your browser tool supports batching; one round trip per
+   frame is painfully slow otherwise.
+
+   **Sanity-check the real resolution before trusting it.** Ask what the video actually
+   occupied on screen, not what your screenshot tool reported — if those disagree, you are
+   looking at an upscale. `videoWidth`/`videoHeight` tell you the native size; the rendered
+   box tells you what was truly sampled.
+
+   **Seeking is only permitted inside content the human already played.** Ask the user to
+   let the reel run through once before you start; then every seek reads a buffer their
+   playback caused to load, and you have initiated nothing. Do not seek through a video
+   nobody has watched — that turns buffering into a fetch you caused.
+
+6. **Sweep, then fill gaps.** Start coarse (every ~3s for a 40s reel), read what you have,
+   then re-capture at specific timestamps where a caption clearly changed between two
+   frames or an ingredient went in unlabelled. This is the same idea as the YouTube path's
+   transcript-cue pass, driven by on-screen text instead of a transcript.
+7. **Save the thumbnail frame to disk.** Most browser screenshot tools accept a
+   "save to disk" flag and return a path — take it for your Step 5.5 pick, so you have
+   real bytes to encode later. Check the saved file's actual pixel width before using it
+   (Step 5.5's ≥512px rule applies here exactly as it does everywhere else).
+
+#### What you get, and what you don't
+
+| Local capture gives you | This path gives you |
+|---|---|
+| `frame_*.jpg` | zoomed screenshots of the video region — equivalent, read them the same way |
+| `caption.txt` | the page's own caption text — equivalent, and just as authoritative |
+| `onscreen.clean.txt` (Vision OCR) | **you** read the overlay text straight off the frames; no OCR pass exists or is needed |
+| `transcript.clean.txt` (Whisper) | **nothing** — there is no audio on this path |
+
+The missing transcript is usually survivable for exactly the reason the local path already
+notes: ingredients and quantities live on screen far more often than in narration. Say so
+in your Step 5 notes rather than presenting the extraction as though audio was considered.
+
+#### Failure modes
+
+- **No browser tools in the session** — this path is unavailable. Don't improvise one with
+  `curl`/`yt-dlp`; Instagram's fetch path is confirmed broken *and* prohibited. Tell the
+  user, and offer running the skill locally on a Mac instead.
+- **No connected browser, or the extension is offline** — ask the user to open Chrome with
+  the extension connected. Don't retry blindly.
+- **The tab isn't on the post** — ask; never navigate there yourself.
+- **A login wall or age gate** — the user isn't signed in *in that browser profile*. Say
+  so; do not attempt to sign in, and do not enter credentials under any circumstances.
+- **Frames are black or the video won't seek** — the reel probably hasn't been played
+  through. Ask the user to play it fully once, then retry.
+- **Overlay text is illegible** — you're capturing at too low a resolution. Enlarge the
+  video element and zoom to the video region rather than screenshotting the whole window.
 
 ### Instagram carousels (multi-image `/p/` posts)
 
@@ -438,8 +594,8 @@ captions that read exactly like real evidence.
 
 ### Xiaohongshu (XHS/RED/小红书)
 
-Works on every platform this skill runs on — no macOS-only screen-capture path needed
-here, unlike Instagram. `yt-dlp` ships a real `XiaoHongShu` extractor (unlike Instagram/
+Works on every platform this skill runs on, with no browser and no screen capture in the
+loop at all — unlike either Instagram path. `yt-dlp` ships a real `XiaoHongShu` extractor (unlike Instagram/
 TikTok), so this goes through `watch.py` the same way YouTube does; it auto-detects both
 URL shapes (`xiaohongshu.com/explore/<id>`, `xiaohongshu.com/discovery/item/<id>`, and
 `xhslink.cn/...` short links, which 302-redirect to the canonical form). Just run:
@@ -655,7 +811,11 @@ visible, dominated by a hand/utensil obscuring the food, transition frames (mid-
 part-black), or where text/graphics cover a substantial part of the dish itself (a short
 caption along the bottom edge is fine, a title card plastered across the food is not).
 
-**Check your #1 pick's actual pixel width before moving on** — `identify` (ImageMagick) or
+**A pixel-width check only counts if those pixels were captured, not upscaled.** A frame
+screenshotted from a portrait video in a landscape viewport can report 750px while
+carrying ~440px of real detail; resizing or zooming after the fact never adds information
+back. On the agent-controlled-browser path, capture rotated (Step 1) so the number and the
+detail agree. **Check your #1 pick's actual pixel width before moving on** — `identify` (ImageMagick) or
 `python3 -c "from PIL import Image; print(Image.open('<path>').size)"` on the frame file.
 Composition can look right in a downscaled preview and still be a soft, blurry image once
 it's the full-size card/OG thumbnail everyone sees — Step 1's `--resolution 1024` should
@@ -745,6 +905,30 @@ second place for it to drift out of sync and break.
    read a file path off your machine, so Read the frame file and encode it yourself before
    calling the tool. Do this every time there's a frame to give it — a recipe saved without
    this call shows with no thumbnail in the library.
+
+   **Downscale before encoding — the base64 has to pass through your own context.** You
+   have to read the encoded string and then reproduce it verbatim in the tool call, so the
+   practical ceiling is far below any server limit: a full-size frame runs to six figures
+   of base64 and will be truncated on read or corrupted on write. Target **≈20–25k base64
+   characters (~15–19 KB of JPEG)**. A 512×384 JPEG at quality ~60 lands there and still
+   satisfies Step 5.5's ≥512px rule. Practical recipe:
+
+   ```python
+   from PIL import Image
+   im = Image.open(FRAME).convert('RGB')
+   im.crop(BOX).resize((512, 384), Image.LANCZOS).save(
+       OUT, 'JPEG', quality=60, optimize=True, subsampling=2)
+   ```
+
+   Crop to the dish before resizing rather than just shrinking the whole frame — spending
+   the pixels on food instead of letterboxing buys back most of the quality the
+   compression costs. Crop away the burnt-in caption too where the composition allows
+   (many reels keep the dish clear of the text band), so the card is the food rather than
+   the food plus someone else's subtitles. At this size the source frame's sharpness
+   matters far more than the quality setting: compressing an upscaled frame wastes bytes
+   on blur, so fix Step 1's capture before trading away quality here. If your encoded string still exceeds ~25k characters, compress
+   further; do **not** save the recipe thumbnail-less just because the first attempt was
+   too big, and do not fall back to a platform CDN URL (see Step 5.5).
 5. Read back the tool's response for the real `id`/`slug` nourishible assigned, and use
    that (not anything you invented) in your Step 6 summary to the user.
 6. **If the response includes a `safety` field** (nourishible computes this server-side
@@ -785,6 +969,16 @@ re-extract or adjust, leave it.
   - `onscreen.clean.txt` mostly empty too, with real frames present — the crop likely
     missed the reel (wrong window/display). Tell the user plainly rather than guessing at
     a recipe from frames with no readable text.
+- **Instagram, but you can't run the capture scripts** (remote agent, non-Darwin shell,
+  scripts not on the machine with Chrome) — this is **not** a dead end. Check for browser
+  tools and use `### Instagram — agent-controlled browser` in Step 1. Only report Instagram
+  as unavailable when that path is missing too, and say which piece is missing rather than
+  "Instagram is macOS-only".
+- **Agent-controlled browser path fails (Instagram)** — see that section's own failure
+  modes in Step 1. The two that matter most: never navigate to the post yourself to "fix"
+  a missing tab, and never retry a login wall — ask the user in both cases.
+- **Thumbnail base64 too large to relay** — downscale and re-encode (Step 6.5, item 4);
+  don't skip the thumbnail and don't substitute a platform CDN URL.
 - **No usable ingredient list found anywhere** (frames, caption, audio) — don't fabricate
   one. Tell the user the video doesn't appear to state ingredients/quantities clearly
   enough to extract, and offer to proceed with what's inferable (dish name + technique
@@ -830,8 +1024,16 @@ tokens at most for a 10-minute video.
   user's real nourishible library. That's the point of Step 6.5, not a side effect to be
   surprised by.
 
-**On Instagram specifically** (`scripts/capture/`), this skill asks for real system
-permissions the YouTube path never touches — worth being explicit about rather than
+**On the Instagram agent-controlled-browser path**, this skill asks for no system
+permissions at all: it drives a Chrome the user already has open, through whatever browser
+tooling the agent is configured with, and reads only the page the user themselves
+navigated to. It takes screenshots of that tab and evaluates script in it to pause/seek
+the already-playing `<video>`; it performs no navigation, no clicking, no form-filling, no
+sign-in, and no requests to Instagram of its own. Nothing captured leaves the session
+except the frames and caption text that feed Step 2/3, same as every other path.
+
+**On the Instagram local-capture path** (`scripts/capture/`), this skill asks for real
+system permissions the YouTube path never touches — worth being explicit about rather than
 letting it surprise the user mid-run:
 - **Screen Recording** (macOS) — required for `capture-only.sh` to record anything at all.
   `setup.py --install-capture` opens System Settings to the right pane when this isn't
