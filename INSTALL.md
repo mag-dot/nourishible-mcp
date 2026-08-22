@@ -15,8 +15,9 @@ required** — a recipe can't be saved with only one of them:
 
 1. **The remote MCP server** `https://backend-api-production-c967.up.railway.app/mcp` —
    saving, under the user's own nourishible account. Connecting it *is* the login.
-2. **The `recipe-nourishible` skill** — extraction. It watches the video and writes the
-   structured recipe, then calls the MCP server's tools to save it.
+2. **The `recipe-nourishible` skill** — extraction. It watches the video (or reads the
+   slides of an Instagram carousel) and writes the structured recipe, then calls the MCP
+   server's tools to save it.
 
 Do both in this one pass. Don't stop after the first, and don't ask the user to come back
 for a second round.
@@ -130,8 +131,9 @@ bash skills/recipe-nourishible/scripts/build-skill.sh
 UI. (The build refuses to run on a dirty working tree; that's intentional.)
 
 **macOS-only note, worth passing on:** Instagram extraction goes through a local screen
-capture pipeline that only runs on macOS. YouTube and Xiaohongshu work everywhere. The
-skill installs its own dependencies on first use — don't pre-install anything here.
+capture pipeline that only runs on macOS — this covers both Reels and multi-image
+carousels. YouTube and Xiaohongshu work everywhere. The skill installs its own
+dependencies on first use — don't pre-install anything here.
 
 ## Step 3 — verify and report
 
@@ -155,4 +157,5 @@ skill installs its own dependencies on first use — don't pre-install anything 
 
 Then tell the user, in a few lines: what you installed, anything they still have to do
 themselves (restart, GUI steps, the `.skill` upload, finishing sign-in), and that they can
-now paste a cooking video link and ask for it to be saved to their nourishible library.
+now paste a cooking video or Instagram carousel link and ask for it to be saved to their
+nourishible library.
