@@ -50,6 +50,8 @@ recipe tool is a total loss of the corpus.
 | `open <url>` in your normal browser | Indistinguishable from clicking a bookmark |
 | Local processing of a file you already have | Never touches Meta |
 | Pasting a caption or a DM you received | You are the transport |
+| An agent screenshotting a tab **you** opened and played | Same act as recording your screen; the agent is the recorder, not the requester |
+| An agent seeking within a reel you already watched through | Reads the buffer your playback loaded; no new request |
 
 ## Not permitted
 
@@ -60,6 +62,9 @@ recipe tool is a total loss of the corpus.
 | Scripting the play button on a page a script opened | Same as above; the click is the automation |
 | Batch-walking a list of post URLs unattended | The pattern enforcement is designed to catch |
 | Hotlinking Instagram CDN URLs in a rendered page | Re-fetches from Meta on every page view |
+| An agent calling `navigate` on an instagram.com URL | The agent initiated the request — automated access, however it is framed |
+| An agent clicking play, or seeking a reel nobody watched | Turns buffering into a fetch the agent caused |
+| An agent working through several posts in one session | Batch-walking; the capture mechanism does not change the pattern |
 
 **YouTube and recipe websites are different** and are not covered by this contract. YouTube has
 an official API and published captions; recipe sites often publish `schema.org/Recipe` JSON-LD
@@ -76,6 +81,12 @@ You press play, we record the screen        →  0 requests from us.  PERMITTED
 Queue opens a URL, you press play           →  0 requests from us.  PERMITTED
 Script opens a URL and presses play         →  automated session.   NOT PERMITTED
 Script logs in and walks a list             →  automated session.   NOT PERMITTED
+```
+
+```
+You open + play, an agent screenshots     →  0 requests from it.  PERMITTED
+Agent navigates to the post, you play      →  agent initiated.     NOT PERMITTED
+Agent seeks a reel you never watched       →  agent caused fetch.  NOT PERMITTED
 ```
 
 `scripts/serve.mjs` sits on the permitted side by construction: it opens a URL in your normal
@@ -104,12 +115,34 @@ Until then, one tap per reel. That is the honest cost.
 
 ---
 
+## Agent-controlled browsers
+
+An agent (Claude in Chrome, or any MCP browser tool) driving the browser does **not** get
+a different contract. It sits on the permitted side under exactly one arrangement:
+
+> The human navigates to the post and plays it. The agent then reads and screenshots the
+> page they are already looking at.
+
+That is the local screen-capture arrangement with a different recorder, so it inherits the
+same verdict. What flips it to the prohibited side is the agent supplying the *initiation*
+— navigating to a URL, pressing play, opening the next post in a list. The capability to
+do those things is exactly why this needs writing down: an agent that can navigate will
+navigate unless told not to.
+
+Two consequences worth stating plainly, because they look like harmless conveniences:
+
+1. **"Just open the URL for them" is the prohibited pattern**, not a shortcut around a
+   clunky UX. The waiting is the mechanism.
+2. **Seeking is bounded by what the human played.** Scrubbing a fully-buffered reel they
+   watched is reading memory. Seeking a video nobody played can trigger range requests to
+   Meta's CDN that the agent caused — so require a full playthrough first.
+
 ## What this means for a consumer of the engine
 
 If you build on this engine (nourishible.com or anything else):
 
 1. **Do not add an Instagram fetch path.** Not on your server, not in a worker, not "just for
-   testing". The engine deliberately has no such capability; adding one transfers the account
+   testing", and not by handing an agent a browser and letting it navigate. The engine deliberately has no such capability; adding one transfers the account
    risk to whoever's credentials are used.
 2. **Instagram jobs are asynchronous by nature.** A submitted Instagram URL enters
    `needs-capture` and stays there until a human plays it. Your UI must be able to show
