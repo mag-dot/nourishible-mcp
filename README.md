@@ -25,7 +25,7 @@ Two pieces, each doing one job:
   distinct recipes — one per slide — it can save them as separate recipes, each linking
   back to its own `?img_index=N` slide. It has no idea what a nourishible account is — it just produces a structured
   recipe.
-- **A hosted, remote MCP server** at `nourishible.com/mcp` — saving, under your account.
+- **A hosted, remote MCP server**, set up from `nourishible.com/ai-agent` — saving, under your account.
   This is the only thing that holds your login and writes to nourishible's database.
   Connecting it *is* the login: your agent pops your browser, you sign in and approve, and
   it's done — no separate CLI step, nothing to clone or run yourself. Read tools cover

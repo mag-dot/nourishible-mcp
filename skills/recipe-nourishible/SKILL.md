@@ -863,7 +863,7 @@ per-agent setup, not something to redo per recipe:
 it covers registering the MCP server *and* (re)installing this skill in the same pass, with
 the exact command or config file for the agent you're running as, and it's safe to run when
 one half is already in place. If you can't fetch it, register the server directly — remote
-HTTP MCP server named `nourishible` at the URL published on **nourishible.com/mcp** (Claude
+HTTP MCP server named `nourishible` at the URL published on **nourishible.com/ai-agent** (Claude
 Code: `claude mcp add --transport http --scope user nourishible <that url>`; Claude Desktop
 and other clients have their own "add remote server" flow, some GUI-only — for those, tell
 the user the one thing to click rather than skipping it).
