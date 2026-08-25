@@ -302,10 +302,11 @@ def _base_download_cmd(
     audio_only: bool,
     cookies_from_browser: str | None,
     cookies_file: str | None,
+    section: str | None = None,
 ) -> list[str]:
     output_template = str(out_dir / "video.%(ext)s")
     fmt = "ba/bestaudio" if audio_only else "bv*[height<=720]+ba/b[height<=720]/bv+ba/b"
-    return [
+    cmd = [
         "yt-dlp",
         "-f", fmt,
         "--merge-output-format", "mp4",
@@ -317,11 +318,22 @@ def _base_download_cmd(
         "--convert-subs", "vtt",
         "--no-playlist",
         "--ignore-errors",
+    ]
+    # Trims the download itself to the recipe's own timeframe (see Step 0.5
+    # "screen before downloading" in SKILL.md) — yt-dlp downloads only the
+    # requested seconds instead of the whole file. `section` is a plain
+    # "START-END" string (seconds, or yt-dlp's own MM:SS); the leading `*`
+    # yt-dlp needs for exact (non-chapter) sections is added here so callers
+    # never have to remember yt-dlp's own section-string syntax.
+    if section:
+        cmd += ["--download-sections", f"*{section}"]
+    cmd += [
         *_cookie_args(cookies_from_browser, cookies_file),
         "-o", output_template,
         "--",
         url,
     ]
+    return cmd
 
 
 def _run_yt_dlp(cmd: list[str]) -> tuple[int, str]:
@@ -377,13 +389,14 @@ def download_url(
     audio_only: bool = False,
     cookies_from_browser: str | None = None,
     cookies_file: str | None = None,
+    section: str | None = None,
 ) -> dict:
     if shutil.which("yt-dlp") is None:
         raise SystemExit("yt-dlp is not installed. Install with: brew install yt-dlp")
 
     out_dir.mkdir(parents=True, exist_ok=True)
     base_cmd = _base_download_cmd(
-        url, out_dir, audio_only, cookies_from_browser, cookies_file,
+        url, out_dir, audio_only, cookies_from_browser, cookies_file, section=section,
     )
 
     strategies: list[list[str]] = [[]]
@@ -435,6 +448,7 @@ def download(
     audio_only: bool = False,
     cookies_from_browser: str | None = None,
     cookies_file: str | None = None,
+    section: str | None = None,
 ) -> dict:
     if is_url(source):
         return download_url(
@@ -443,13 +457,35 @@ def download(
             audio_only=audio_only,
             cookies_from_browser=cookies_from_browser,
             cookies_file=cookies_file,
+            section=section,
         )
     return resolve_local(source)
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("usage: download.py <url-or-path> <out-dir>", file=sys.stderr)
+        print(
+            "usage: download.py <url-or-path> <out-dir> [--captions-only] [--section START-END]",
+            file=sys.stderr,
+        )
         raise SystemExit(2)
-    result = download(sys.argv[1], Path(sys.argv[2]))
+
+    src, dest = sys.argv[1], Path(sys.argv[2])
+    rest = sys.argv[3:]
+    captions_only = "--captions-only" in rest
+    section_arg: str | None = None
+    if "--section" in rest:
+        i = rest.index("--section")
+        if i + 1 >= len(rest):
+            print("--section needs a START-END value (seconds or MM:SS)", file=sys.stderr)
+            raise SystemExit(2)
+        section_arg = rest[i + 1]
+
+    if captions_only:
+        # Step 0.5 "screen before downloading" — metadata + transcript only,
+        # no video bytes, so the caller can pick a --section before paying
+        # for a full (or even sectioned) download.
+        result = fetch_captions(src, dest)
+    else:
+        result = download(src, dest, section=section_arg)
     print(json.dumps(result, indent=2))

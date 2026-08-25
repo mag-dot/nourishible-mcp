@@ -1,6 +1,6 @@
 ---
 name: recipe-nourishible
-version: "1.1.0"
+version: "1.1.1"
 description: Turn a recipe video or post (Instagram Reel, YouTube Short/video, Xiaohongshu/XHS/RED note) into a structured recipe — title, tagged ingredients, numbered steps matched to the video moment they happen at, servings, source credit, a picked thumbnail — and save it straight to your nourishible account. Downloads the video (or, for an XHS photo/图文 note, its images), reads on-screen text, and cross-references the transcript/description and caption itself; no separate OCR/extraction API. Connects to nourishible via a hosted MCP server — no local server to build, no CLI login step.
 argument-hint: "<video-url>"
 allowed-tools: Bash, Read, AskUserQuestion
@@ -805,8 +805,19 @@ candidates using these criteria, in order:
 
 Reject frames that are: blurry/motion-blurred, mostly a person's face/torso with no food
 visible, dominated by a hand/utensil obscuring the food, transition frames (mid-cut,
-part-black), or where text/graphics cover a substantial part of the dish itself (a short
-caption along the bottom edge is fine, a title card plastered across the food is not).
+part-black), or carrying a caption/banner graphic — even one that doesn't sit directly over
+the food — that spans roughly a third or more of the frame height. "Minor" in the rule above
+means a short line along one edge, not a headline-sized banner across the top of the shot;
+if you're checking whether a candidate qualifies as "minor," it doesn't.
+
+**Confirm the frame is actually this dish before ranking it #1.** Scene-change and
+keyframe candidates are pulled from the whole video indiscriminately, including any
+recap/"coming up" montage, sponsor segment, or outro reel that shows *other* food from the
+same channel. A finished-dish shot that looks great in isolation is still a wrong pick if
+it isn't the dish these ingredients and steps produce — cross-check candidate #1 against
+your own ingredients list (does the shape/color/components on screen match what Step 3
+actually said this recipe contains?) before recording it, and drop straight to the next
+candidate if it doesn't.
 
 **A pixel-width check only counts if those pixels were captured, not upscaled.** A frame
 screenshotted from a portrait video in a landscape viewport can report 750px while
@@ -915,18 +926,37 @@ still owe the other half of.
    rather than silently skipping the call or fabricating a substitute (see Step 5.5's note
    on platform-provided thumbnails).
 
-   **Downscale before encoding — the base64 has to pass through your own context.** You
-   have to read the encoded string and then reproduce it verbatim in the tool call, so the
-   practical ceiling is far below any server limit: a full-size frame runs to six figures
-   of base64 and will be truncated on read or corrupted on write. Target **≈20–25k base64
-   characters (~15–19 KB of JPEG)**. A 512×384 JPEG at quality ~60 lands there and still
-   satisfies Step 5.5's ≥512px rule. Practical recipe:
+   **Downscale before encoding, and re-fetch the URL to confirm what actually landed.**
+   You have to read the encoded string and then reproduce it verbatim in the tool call, and
+   there is a second failure mode *independent of* your own context limit: observed 24 Aug
+   2026, `set_recipe_thumbnail` calls have stored a silently truncated JPEG while still
+   returning a normal-looking success response with the *correct* width/height in it — the
+   saved file itself renders as a clean strip of image followed by flat gray, and nothing in
+   the response tells you it happened. In the same session, calls started hard-failing
+   (`Tool execution failed`) across every tool on this connector, including trivial reads —
+   which points at general connection/session instability on the remote server rather than a
+   clean byte-count ceiling, so **don't treat any specific size as a proven-safe target**;
+   a smaller payload is still lower-risk, but the only real defense is checking the result:
+
+   - Keep payloads modest anyway — **aim for ≤10k base64 characters (~7–8 KB of JPEG)**. A
+     frame in the 300–380px range at quality ~55–60 lands there. This is genuinely in
+     tension with Step 5.5's "reject anything under 512px" rule — resolve it by cropping
+     tight to the dish (below) before you shrink, not by quietly keeping a below-512px
+     frame; if you still can't clear both bars, say so in your Step 6 summary rather than
+     silently picking one.
+   - **Always re-fetch the `thumbnailUrl` the response returns and look at it** before
+     treating the thumbnail as done — the response alone cannot tell you whether this
+     happened, at any size.
+   - If a call fails outright (not just a truncated result), retry once — this has recovered
+     on a retry in testing — but if reads on the same connection are also failing, that's a
+     connector-level outage, not something a smaller image fixes; say so plainly rather than
+     shrinking further and retrying in a loop.
 
    ```python
    from PIL import Image
    im = Image.open(FRAME).convert('RGB')
-   im.crop(BOX).resize((512, 384), Image.LANCZOS).save(
-       OUT, 'JPEG', quality=60, optimize=True, subsampling=2)
+   im.crop(BOX).resize((320, 240), Image.LANCZOS).save(
+       OUT, 'JPEG', quality=55, optimize=True, subsampling=2)
    ```
 
    Crop to the dish before resizing rather than just shrinking the whole frame — spending
@@ -935,9 +965,9 @@ still owe the other half of.
    (many reels keep the dish clear of the text band), so the card is the food rather than
    the food plus someone else's subtitles. At this size the source frame's sharpness
    matters far more than the quality setting: compressing an upscaled frame wastes bytes
-   on blur, so fix Step 1's capture before trading away quality here. If your encoded string still exceeds ~25k characters, compress
-   further; do **not** save the recipe thumbnail-less just because the first attempt was
-   too big, and do not fall back to a platform CDN URL (see Step 5.5).
+   on blur, so fix Step 1's capture before trading away quality here. Do **not** save the
+   recipe thumbnail-less just because encoding is fiddly at this budget, and do not fall
+   back to a platform CDN URL (see Step 5.5).
 5. Read back each tool's response for the real `id`/`slug` (and, once thumbnailed, confirm
    the thumbnail is set) that nourishible assigned, and use that — not anything you
    invented — in your Step 6 summary to the user.

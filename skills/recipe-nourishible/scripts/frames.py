@@ -37,6 +37,37 @@ MAX_READ_DIMENSION = 1998
 DEDUP_THUMB = 16
 DEDUP_THRESHOLD = 2.0
 SHOWINFO_TS_RE = re.compile(r"pts_time:([0-9.]+)")
+# Buffer for the two-stage seek in _two_stage_seek(). Kept short: it's paid as
+# extra decode time on every timestamp-anchored grab.
+SEEK_BUFFER_SECONDS = 2.0
+
+
+def _two_stage_seek(target: float | None) -> tuple[list[str], list[str]]:
+    """Split a seek into a fast keyframe-snap seek before ``-i`` plus a short
+    accurate residual seek after ``-i``.
+
+    A bare ``-ss`` before ``-i`` snaps to the nearest keyframe and hands
+    decoding off from there — fine when what follows is a normal sequential
+    decode, but a single ``-frames:v 1`` grab (or a scene-detect pass that
+    starts mid-GOP) can then emit a frame whose backward P/B references
+    haven't fully resolved. On affected sources that surfaces as a visibly
+    corrupted/ghosted frame — this is what produced the "Homebrew Kombucha"
+    thumbnail glitch (a fast-seek grab landing mid-transition in the source
+    video). Decoding forward through ``SEEK_BUFFER_SECONDS`` of buffer before
+    the frame we keep resolves that reference chain, at the cost of a couple
+    extra seconds of decode instead of a bare jump.
+
+    Returns ``(pre_i_args, post_i_args)`` — args to splice before and after
+    ``-i`` respectively. ``target=None`` (no seek requested) returns
+    ``([], [])``.
+    """
+    if target is None:
+        return [], []
+    rough = max(0.0, target - SEEK_BUFFER_SECONDS)
+    residual = target - rough
+    pre = ["-ss", f"{rough:.3f}"] if rough > 0 else []
+    post = ["-ss", f"{residual:.3f}"] if residual > 0 else []
+    return pre, post
 
 
 def _scale_filter(resolution: int) -> str:
@@ -238,20 +269,23 @@ def extract_scene_candidates(
         existing.unlink()
 
     output_pattern = str(out_dir / "frame_%04d.jpg")
+    pre_seek, post_seek = _two_stage_seek(start_seconds)
     cmd: list[str] = [
         "ffmpeg",
         "-hide_banner",
         "-loglevel", "info",
         "-y",
+        *pre_seek,
     ]
-    if start_seconds is not None:
-        cmd += ["-ss", f"{start_seconds:.3f}"]
+    # -to is an absolute input-side timestamp, so it isn't shifted by the
+    # accurate residual seek (post_seek) applied after -i below.
     if end_seconds is not None:
         cmd += ["-to", f"{end_seconds:.3f}"]
 
     vf = f"select='eq(n\\,0)+gt(scene\\,{threshold})',{_scale_filter(resolution)},showinfo"
     cmd += [
         "-i", str(Path(video_path).resolve()),
+        *post_seek,
         "-vf", vf,
         "-vsync", "vfr",
     ]
@@ -359,13 +393,15 @@ def extract_at_timestamps(
     out: list[dict] = []
     for t in points:
         path = out_dir / f"cue_{len(out):04d}.jpg"
+        pre_seek, post_seek = _two_stage_seek(t)
         cmd = [
             "ffmpeg",
             "-hide_banner",
             "-loglevel", "error",
             "-y",
-            "-ss", f"{t:.3f}",
+            *pre_seek,
             "-i", str(Path(video_path).resolve()),
+            *post_seek,
             "-frames:v", "1",
             "-vf", _scale_filter(resolution),
             "-q:v", "4",
@@ -686,7 +722,8 @@ if __name__ == "__main__":
     if len(sys.argv) < 3:
         print(
             "usage: frames.py <video-path> <out-dir> [--fps F] [--resolution W] "
-            "[--max-frames N] [--start T] [--end T] [--no-dedup]",
+            "[--max-frames N] [--start T] [--end T] [--no-dedup] "
+            "[--thumbnail-at T]",
             file=sys.stderr,
         )
         raise SystemExit(2)
@@ -701,6 +738,7 @@ if __name__ == "__main__":
     start_arg = None
     end_arg = None
     dedup = True
+    thumbnail_at_arg: str | None = None
     i = 0
     while i < len(args):
         if args[i] == "--fps":
@@ -715,8 +753,24 @@ if __name__ == "__main__":
             end_arg = args[i + 1]; i += 2
         elif args[i] == "--no-dedup":
             dedup = False; i += 1
+        elif args[i] == "--thumbnail-at":
+            thumbnail_at_arg = args[i + 1]; i += 2
         else:
             i += 1
+
+    # Manual override: grab exactly this one frame as the thumbnail pick,
+    # skipping the auto-ranking in Step 5.5 entirely. Uses the same
+    # two-stage seek as every other timestamp-anchored grab (see
+    # _two_stage_seek's docstring for why that matters for a clean frame).
+    if thumbnail_at_arg is not None:
+        t = parse_time(thumbnail_at_arg)
+        frames_out, meta_out = extract_at_timestamps(
+            video, out, [t], resolution=max(resolution, 512),
+        )
+        print(json.dumps(
+            {"thumbnail_at": t, "frames": frames_out, "meta": meta_out}, indent=2,
+        ))
+        raise SystemExit(0)
 
     meta = get_metadata(video)
     start_sec = parse_time(start_arg)

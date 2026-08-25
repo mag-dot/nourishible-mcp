@@ -117,6 +117,19 @@ def main() -> int:
     )
     ap.add_argument("--start", type=str, default=None, help="Range start (SS, MM:SS, or HH:MM:SS)")
     ap.add_argument("--end", type=str, default=None, help="Range end (SS, MM:SS, or HH:MM:SS)")
+    ap.add_argument(
+        "--section",
+        type=str,
+        default=None,
+        metavar="START-END",
+        help="Download only this slice of the source (yt-dlp --download-sections), not the "
+             "whole file. Pairs with a first `--detail transcript` pass: read the transcript "
+             "it returns (no video downloaded), decide where the actual recipe content starts "
+             "and ends, then re-run with --section to fetch only that range. Independent of "
+             "--start/--end, which only change frame *extraction* density within whatever was "
+             "downloaded — --section changes what gets downloaded in the first place. Ignored "
+             "for local files.",
+    )
     ap.add_argument("--out-dir", type=str, default=None, help="Working directory (default: tmp)")
     ap.add_argument(
         "--no-whisper",
@@ -230,6 +243,7 @@ def main() -> int:
                     audio_only=audio_only,
                     cookies_from_browser=cookies_from_browser,
                     cookies_file=cookies_file,
+                    section=args.section,
                 )
             except SystemExit as exc:
                 if is_youtube(args.source) and not audio_only:
