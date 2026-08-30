@@ -1,0 +1,33 @@
+name: checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  skill-copy-in-sync:
+    # README and INSTALL.md both tell agents that the repo-root SKILL.md is a
+    # byte-identical copy of the skill's own, fetchable from raw.githubusercontent.
+    # It drifted once (the root copy missed all of #9), so agents installing via
+    # the raw URL ran different instructions than plugin users. Keep it honest.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Root SKILL.md matches skills/recipe-nourishible/SKILL.md
+        run: |
+          if ! diff -u skills/recipe-nourishible/SKILL.md SKILL.md; then
+            echo
+            echo "::error::Root SKILL.md is out of sync with skills/recipe-nourishible/SKILL.md."
+            echo "Fix with: cp skills/recipe-nourishible/SKILL.md SKILL.md"
+            exit 1
+          fi
+
+  scripts-compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m compileall -q skills/recipe-nourishible/scripts

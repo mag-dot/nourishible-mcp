@@ -710,6 +710,16 @@ def main() -> int:
             return cmd_json_capture()
         if arg == "--install-capture":
             return cmd_install_capture()
+        # Anything else is a typo, not a request to install. Falling through to
+        # cmd_install() here meant `setup.py --chekc` silently ran the whole
+        # installer instead of the check the caller asked for.
+        #
+        # 64 (EX_USAGE), deliberately not 2: 2/3/4 are the documented --check
+        # status codes (missing binaries / no key / both), each mapped to a
+        # remediation in SKILL.md Step 0. Returning 2 here told the caller to
+        # go install ffmpeg because it had misspelled a flag.
+        print(f"unknown option {arg!r}\n{__doc__}", file=sys.stderr)
+        return 64
     return cmd_install()
 
 

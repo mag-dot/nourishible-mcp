@@ -1,6 +1,6 @@
 ---
 name: recipe-nourishible
-version: "1.1.1"
+version: "1.4.0"
 description: Turn a recipe video or post (Instagram Reel, YouTube Short/video, Xiaohongshu/XHS/RED note) into a structured recipe — title, tagged ingredients, numbered steps matched to the video moment they happen at, servings, source credit, a picked thumbnail — and save it straight to your nourishible account. Downloads the video (or, for an XHS photo/图文 note, its images), reads on-screen text, and cross-references the transcript/description and caption itself; no separate OCR/extraction API. Connects to nourishible via a hosted MCP server — no local server to build, no CLI login step.
 argument-hint: "<video-url>"
 allowed-tools: Bash, Read, AskUserQuestion
@@ -39,6 +39,7 @@ manual clone, `~/.claude/skills/`, `~/.codex/skills/`, …):
 ```bash
 SKILL_DIR="<absolute path of the directory containing the SKILL.md you Read>"
 WATCH_SCRIPT="$SKILL_DIR/scripts/watch.py"
+FRAMES_SCRIPT="$SKILL_DIR/scripts/frames.py"   # used directly by Step 5.5's thumbnail re-grab
 if [ ! -f "$WATCH_SCRIPT" ]; then
   echo "ERROR: could not find $WATCH_SCRIPT — is scripts/ present as a sibling of this SKILL.md?" >&2
   exit 1
@@ -49,6 +50,24 @@ Substitute that literal path for `${SKILL_DIR}` in every command below. This wor
 every harness that can run bash and read local image files (Claude Code, Claude Desktop
 with a local MCP client, Cursor agent mode, Codex CLI, Gemini CLI, …) without relying on
 any harness-specific environment variable.
+
+### Reference files
+
+Platform-specific procedure and audit material live in `${SKILL_DIR}/references/` rather
+than in this file, so a run only pays for the path it actually takes. `Read` the one your
+URL routes to, when you get there — not upfront:
+
+| File | Read it when |
+|---|---|
+| `references/instagram.md` | the URL is instagram.com (either capture route, and carousels) |
+| `references/xiaohongshu.md` | the URL is xiaohongshu.com or xhslink.cn |
+| `references/security.md` | auditing what the skill does to the machine; a user asks about permissions |
+| `references/attribution.md` | credit/licence questions about where this skill came from |
+
+If you fetched this SKILL.md standalone over HTTP (from
+`raw.githubusercontent.com/mag-dot/nourishible-mcp/main/SKILL.md`) rather than from an
+installed skill directory, there is no local `${SKILL_DIR}` — fetch the reference you need
+from `.../main/skills/recipe-nourishible/references/<name>.md` instead.
 
 ## Step 0 — Setup preflight (runs every invocation, silent on success)
 
@@ -147,49 +166,18 @@ Once dependencies are confirmed and the line above is written, write or update
 - User pastes an Instagram Reel, YouTube Short/video, or Xiaohongshu (XHS/RED/小红书) note
   link and asks to save/extract it as a recipe, or types `/recipe-nourishible <url>`.
 - User pastes an Instagram **carousel** (`/p/…`, often with `?img_index=N`) whose recipe is
-  written on the images themselves — see "Instagram carousels" in Step 1. A carousel may
-  hold several separate recipes, one per slide.
+  written on the images themselves. A carousel may hold several separate recipes, one per
+  slide — see `references/instagram.md`.
 - User asks "what's the recipe in this video/post" for something that is clearly a
   cooking/recipe video or note.
 
 Not for: general video Q&A unrelated to recipes, blog/website recipe scraping (out of
-scope — no download step applies), TikTok (not currently supported by the bundled
-download script). Instagram carousels ARE supported, but only via one of the two
-screen-based paths below — there is no fetch path for them either.
+scope — no download step applies), TikTok (not supported by the bundled download script).
 
-**Instagram has no fetch path — it comes off a screen, by one of two routes.** YouTube
-and Xiaohongshu work everywhere this skill runs. Instagram does too, but only if you have
-a real browser someone can see:
-
-- **Local macOS screen capture** (`### Instagram — local screen capture`, Step 1) — the
-  original path and the higher-fidelity one: real sampled frames, on-device Vision OCR,
-  and a Whisper audio transcript. Needs macOS, Screen Recording permission, and Chrome on
-  the *same machine the skill's scripts run on*.
-- **Agent-controlled browser** (`### Instagram — agent-controlled browser`, Step 1) —
-  works from **any** platform, including an agent running in a remote Linux container with
-  no macOS anywhere in reach, provided it can drive a Chrome the user is sitting in front
-  of (Claude in Chrome, or any MCP browser tool exposing screenshots + page reads). Yields
-  caption text and video frames; **no audio transcript**.
-
-**Choose by what's actually reachable, not by what OS you happen to be running on.** An
-agent on Linux can still drive a macOS Chrome through a browser extension — that is the
-common remote case, and it works. The decision rule:
-
-1. Can you run `scripts/capture/capture-only.sh` on a Darwin machine? Use local capture.
-2. Otherwise, do you have browser tools pointed at a Chrome the user can see? Use the
-   agent-controlled browser path.
-3. Only if neither is true, tell the user plainly that Instagram can't be extracted from
-   where you're running, and offer the local-agent route (see that path's failure modes).
-
-Do not conclude "Instagram is macOS-only" and stop just because *your own* shell reports
-Linux — check for browser tools first. That mistake makes the skill look broken on every
-remote agent.
-
-**Xiaohongshu content is often a photo carousel, not a video.** A large share of XHS
-recipe content is a "图文" (photo/text) note — a sequence of images plus a text
-description, no video at all. This skill handles both shapes (see Step 1's Xiaohongshu
-section) but they produce a differently-shaped report — read that section rather than
-assuming the YouTube/Instagram video flow applies.
+**Route by platform in Step 1.** YouTube and Xiaohongshu work everywhere this skill runs
+and go through `watch.py`. Instagram has no fetch path at all and needs one of two
+screen-based routes — read `references/instagram.md` when you get there, and don't rule
+Instagram out based on the OS your own shell reports.
 
 ## Step 0.5 — dedup check (do this before spending any download/frame budget)
 
@@ -261,12 +249,18 @@ Notes on the flags, and why they differ from this script's own defaults:
 
 - `--resolution 1024` (not the default 512) — recipe frames frequently carry small
   on-screen text (ingredient callouts, timers, quantity overlays) that needs to be
-  legible, not just recognizable. This roughly quadruples image tokens per frame; accept
-  that cost, it's the point of this skill.
-- `--detail balanced` is the right starting point for most recipe Shorts (under ~90s,
-  which covers the large majority of recipe content). For a longer-format video, consider
-  `--detail token-burner` or focusing with `--start`/`--end` around the actual cooking
-  steps if there's a long cold-open/intro to skip.
+  legible, not just recognizable. This is a *width* ceiling; the real cost governor is the
+  0.8 MP area cap in `frames.py`, which holds every frame to ~800-1070 image tokens
+  whatever its orientation. So this flag buys legibility on landscape sources and costs
+  little — it does not multiply your frame budget.
+- `--detail balanced` is the right starting point for essentially everything, Shorts and
+  long-format alike. **For a longer video, narrow the range — do not raise the detail.**
+  Screen with a transcript pass and pass `--section` (below), or focus with
+  `--start`/`--end` around the actual cooking steps. `--detail token-burner` is
+  **uncapped** — it keeps every scene-change frame across the whole video, which on a long
+  source is hundreds of frames and tens of thousands of wasted image tokens for content
+  that is mostly intro, sponsor read and outro. Reach for it only on a short clip whose
+  every cut genuinely matters.
 - If the video is bot-gated ("Sign in to confirm you're not a bot"), set
   `WATCH_COOKIES_FROM_BROWSER` (or pass `--cookies-from-browser BROWSER`) — this genuinely
   is a cookie-auth problem, unlike Instagram's.
@@ -302,6 +296,27 @@ transcript pass comes back empty (no captions, auto-captions disabled) or the so
 screen from the transcript or don't screen at all — a wrong guess that clips out the actual
 recipe steps is worse than the wasted download time this step exists to save.
 
+**Set the frame budget from the text you already have.** The transcript-only pass above
+costs nothing and is not just a range-finder — read the transcript *and* the description
+alongside it before committing to a frame density. A large share of YouTube recipe
+descriptions (and almost every Instagram/XHS caption) carry the complete quantified
+ingredient list as plain text. When they do, frames are there to *confirm* the list and to
+time the steps, not to discover the recipe, and you do not need 50-80 of them to do that:
+
+- **Description/caption already has a complete quantified ingredient list** → run
+  `--detail efficient` (cap 50, keyframes) instead of `balanced`, and lean on the
+  transcript-cue pass below for step timing. Typically halves the frame spend with nothing
+  lost, because the thing frames would have been discovering is already in hand.
+- **Partial list** (ingredients named but no quantities, or steps only) → stay on
+  `balanced`. The frames are carrying real information.
+- **No usable text at all** (no captions, no description, silent video) → stay on
+  `balanced`, and expect the on-screen text to be the whole recipe.
+
+Decide this from the text, never from the video's length or your guess at its format. If
+Step 3 then comes up short on a specific ingredient or quantity, add frames with
+`--timestamps` for exactly those moments rather than re-running the whole pass at a higher
+detail — a targeted re-grab costs a few frames, a re-run costs all of them again.
+
 **Transcript-cue pass (do this for every recipe, not just when sparse):** after the first
 run, scan the transcript for the moments a cook narrates quantities/technique ("add two
 tablespoons of...", "let that go for five minutes", "fold in the..."), and for moments a
@@ -329,345 +344,51 @@ action is often only correct/visible at one specific frame, not "somewhere in th
 - `--no-dedup` — keep near-duplicate frames (by default, visually near-identical frames to
   the previous kept one are dropped so the frame budget goes to distinct content).
 
-### Instagram — local screen capture
+### Instagram
 
-**This is one of two Instagram paths.** It requires macOS (Screen Recording is a
-macOS-only mechanism) *on the machine running these scripts*. If that isn't where you are
-— a remote agent, a Linux/Windows user, a container — skip to
-`### Instagram — agent-controlled browser` below rather than concluding Instagram is
-unsupported. This is a **separate, opt-in** profile from the YouTube setup above — a user who only ever pastes YouTube links
-is never asked to install any of this. Verify it's ready before capturing:
+**No fetch path — content comes off a screen.** `yt-dlp` returns HTTP 400 on Instagram
+even with a valid logged-in session; cookie auth is not a fallback, so don't try it.
+There are two working routes, one needing macOS and one needing only browser tools:
 
-```bash
-python3 "${SKILL_DIR}/scripts/setup.py" --check-capture
-```
+- **Local screen capture** — higher fidelity (sampled frames, on-device Vision OCR, a
+  Whisper transcript). Needs macOS, Screen Recording permission, and Chrome on the same
+  machine the scripts run on.
+- **Agent-controlled browser** — works from any platform, including a remote Linux
+  container, provided you can drive a Chrome the user is sitting in front of. Yields
+  caption text and video frames; **no audio transcript**.
 
-Exit 0 means ready — go straight to the capture command below. A non-zero exit prints one
-actionable line (what's missing, and the exact install command). Run that:
+Don't conclude "Instagram is macOS-only" because *your own* shell reports Linux — an
+agent on Linux can drive a macOS Chrome through a browser extension, and that is the
+common remote case.
 
-```bash
-python3 "${SKILL_DIR}/scripts/setup.py" --install-capture
-```
+**Read `${SKILL_DIR}/references/instagram.md` before running either one.** It carries
+the preflight commands, the capture procedure, the carousel path (a `/p/` post whose
+recipe is written on the slides, sometimes several recipes in one post), the
+acquisition rule that governs all of it, and the per-path failure modes.
 
-This installs `whisper-cli`/`node`/`swiftc` via brew if missing, downloads the Whisper
-model, compiles the OCR binary, and — if Screen Recording permission isn't granted — opens
-System Settings to the right pane and exits non-zero, telling the user to grant it and
-re-run. **Don't loop silently on that** — surface it to the user; granting a macOS
-permission needs them, not you.
-
-Once ready, tell the user to open the Instagram post **in Google Chrome** (this is
-Chrome-specific — it drives Chrome via AppleScript, other browsers aren't detected) and
-have it visible and playing, then run:
-
-```bash
-"${SKILL_DIR}/scripts/capture/capture-only.sh" 45
-```
-
-This finds the browser window playing the reel via the accessibility API (no manual
-window-picking), shows a one-frame preview for you to confirm, records the screen for the
-given number of seconds, and prints `CAPTURE_DIR=<path>` on success — parse that line for
-the directory containing what you need:
-
-- `frame_*.jpg` — sampled video frames, same as the YouTube path gives you.
-- `caption.txt` — **the post caption as exact text**, read from the page's
-  `og:description` rather than OCR'd off pixels. Prefer this over the caption text that
-  also appears in `onscreen.clean.txt`: OCR truncates at the fold (a real capture cut off
-  at exactly "This little bowl was made with:", losing every ingredient below it) and
-  introduces transcription errors. May be absent — if Chrome's "Allow JavaScript from
-  Apple Events" is off, or the tab closed mid-capture — in which case fall back to the OCR
-  text.
-- `onscreen.clean.txt` — deduped OCR of on-screen text (ingredient overlays, step
-  callouts). Also picks up caption text, since the crop includes the caption panel beside
-  the video — treat `caption.txt` as authoritative where the two disagree.
-- `transcript.clean.txt` — Whisper transcript, or empty if no audio was captured (system
-  audio needs a virtual device the user may not have installed; on-screen text carries
-  most of a recipe's actual content regardless, so proceed with what's there rather than
-  treating a silent transcript as a failure).
-
-Read these the same way you'd read the YouTube path's output in Step 2 — `frame_*.jpg`
-maps to the frame paths `watch.py` would have printed, `onscreen.clean.txt` and
-`transcript.clean.txt` are the OCR/transcript evidence streams.
-
-**Why this is the compliant path, not a workaround:** nothing here makes an automated
-request to Instagram. The user opens and plays the post themselves; the script only
-records what's already rendered on their own screen, the same way a screen-recording app
-would. See [`docs/capture/CONTRACT.md`](../../docs/capture/CONTRACT.md) — the binding rule
-this whole design exists to satisfy is *"content enters only because a human caused it to
-play."* Don't build around this by scripting the play button, opening the URL yourself, or
-walking a list of posts unattended — those cross from "recording your own screen" into
-"automated access," which is exactly what's prohibited.
-
-**If `capture-only.sh` reports it couldn't find the reel window**, the post likely isn't
-open and playing in a visible Chrome tab — ask the user to check, don't retry blindly.
-
-### Instagram — agent-controlled browser (any platform)
-
-Use this when you can't run the macOS capture scripts — you're a remote/cloud agent, the
-user is on Linux or Windows, or the skill's shell simply isn't the machine Chrome lives
-on. It needs browser-automation tools wired to a Chrome the **user** is looking at
-(Claude in Chrome's `mcp__claude-in-chrome__*`, or any MCP browser server offering
-screenshots, page reads, and script evaluation). It needs no Screen Recording permission,
-no `swiftc`, no Whisper, and no local `ffmpeg` — everything comes through the browser.
-
-**The acquisition rule is identical, and it is not negotiable.** Read
-[`docs/capture/CONTRACT.md`](../../docs/capture/CONTRACT.md) before touching this path. In
-short:
-
-- **The user navigates to the post and presses play. You never do.** Do not call a
-  `navigate` tool with an instagram.com URL. Do not click the play button. Do not open a
-  post from a list, a saved collection, or a profile grid. Ask, then wait.
-- Once the human has played it, reading that rendered page and screenshotting it is the
-  same permitted act as recording their screen — you are the recorder, not the requester.
-- **Never batch.** One post, because the user asked for that post. Walking several posts
-  in a session is the pattern enforcement is built to catch, no matter how the frames are
-  captured.
-
-If the user's own browser is not already open on the post, ask them to open it. That ask
-*is* the mechanism, not friction to design away.
-
-#### Procedure
-
-1. **Pick the browser.** List the connected browsers and have the user choose one (Claude
-   in Chrome requires this before any browser action). Note the platform it reports — a
-   macOS Chrome here means the local-capture path may also be available if your scripts
-   can reach that machine; usually they can't, which is why you're here.
-2. **Locate the post's tab.** Get the tab context and look for an `instagram.com/reels/…`
-   or `/p/…` URL. If it isn't there, ask the user to open the post and play it, then check
-   again. Never navigate there yourself.
-3. **Read the caption.** Pull it from the page's own text or `og:description` — this is
-   the exact equivalent of the local path's `caption.txt`, and the same precedence applies
-   (see Step 2): it is often more complete than anything on screen, and it is real text
-   rather than OCR, so prefer it over pixels wherever the two disagree.
-4. **Rotate the video before capturing — this is the single biggest quality lever.**
-   Reels are portrait (typically 1080×1920) and browser viewports are landscape. A
-   portrait video fitted into a landscape viewport occupies a *narrow vertical strip*: on
-   a 1298×724 viewport it renders about **440px wide**, no matter how you zoom. Your
-   screenshot tool will happily hand back a larger image than that, but those extra pixels
-   are **upscaled, not captured** — you get a soft, mushy frame and, worse, a pixel width
-   that passes Step 5.5's ≥512px check while carrying less than half that in real detail.
-
-   Fix it by rotating the video 90° so its long axis lands on the viewport's wide axis,
-   then rotating the image back after capture. On the same viewport this lifts real
-   capture from ~440px to ~1440px along the long edge — roughly **3× the linear detail**.
-   Composite onto your own canvas so the platform's UI chrome isn't overlaid on the frame:
-
-   ```javascript
-   const v = document.querySelectorAll('video')[0]; v.pause();
-   v.style.cssText = 'position:fixed;top:0;left:0;width:2px;height:2px;opacity:0.01;';
-   const c = document.createElement('canvas');
-   document.documentElement.appendChild(c);        // NOT body — body gets hidden below
-   const H = innerHeight, W = Math.round(H * 16 / 9);   // 16:9 once rotated
-   c.style.cssText = `position:fixed;top:0;left:0;width:${W}px;height:${H}px;z-index:2147483647;background:#000;`;
-   c.width = W * 2; c.height = H * 2;
-   document.body.style.visibility = 'hidden';      // hide the site's own UI
-   window.__draw = async (t) => {
-     await new Promise(r => { v.onseeked = r; v.currentTime = t; });
-     const x = c.getContext('2d');
-     x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,c.width,c.height);
-     x.translate(c.width/2, c.height/2); x.rotate(Math.PI/2);
-     x.drawImage(v, -c.height/2, -c.width/2, c.height, c.width);
-     x.setTransform(1,0,0,1,0,0);
-   };
-   ```
-
-   Then `Image.transpose(Image.ROTATE_90)` in PIL undoes the clockwise canvas rotation.
-   **Restore the page afterwards** (remove the canvas, clear the inline styles, unhide the
-   body) — you altered a tab the user is sitting in.
-
-   Note the coordinate space: screenshot pixels and CSS pixels differ, and not by
-   `devicePixelRatio` — tools commonly cap or rescale. Measure the ratio once (screenshot
-   width ÷ `innerWidth`) and scale your capture region by it.
-
-5. **Capture frames by seeking.** Call your draw helper, wait ~1s for the paint, then
-   capture a **zoomed screenshot of the canvas region only**. Batch these (seek → wait →
-   capture, several per call) if your browser tool supports batching; one round trip per
-   frame is painfully slow otherwise.
-
-   **Sanity-check the real resolution before trusting it.** Ask what the video actually
-   occupied on screen, not what your screenshot tool reported — if those disagree, you are
-   looking at an upscale. `videoWidth`/`videoHeight` tell you the native size; the rendered
-   box tells you what was truly sampled.
-
-   **Seeking is only permitted inside content the human already played.** Ask the user to
-   let the reel run through once before you start; then every seek reads a buffer their
-   playback caused to load, and you have initiated nothing. Do not seek through a video
-   nobody has watched — that turns buffering into a fetch you caused.
-
-6. **Sweep, then fill gaps.** Start coarse (every ~3s for a 40s reel), read what you have,
-   then re-capture at specific timestamps where a caption clearly changed between two
-   frames or an ingredient went in unlabelled. This is the same idea as the YouTube path's
-   transcript-cue pass, driven by on-screen text instead of a transcript.
-7. **Save the thumbnail frame to disk.** Most browser screenshot tools accept a
-   "save to disk" flag and return a path — take it for your Step 5.5 pick, so you have
-   real bytes to encode later. Check the saved file's actual pixel width before using it
-   (Step 5.5's ≥512px rule applies here exactly as it does everywhere else).
-
-#### What you get, and what you don't
-
-| Local capture gives you | This path gives you |
-|---|---|
-| `frame_*.jpg` | zoomed screenshots of the video region — equivalent, read them the same way |
-| `caption.txt` | the page's own caption text — equivalent, and just as authoritative |
-| `onscreen.clean.txt` (Vision OCR) | **you** read the overlay text straight off the frames; no OCR pass exists or is needed |
-| `transcript.clean.txt` (Whisper) | **nothing** — there is no audio on this path |
-
-The missing transcript is usually survivable for exactly the reason the local path already
-notes: ingredients and quantities live on screen far more often than in narration. Say so
-in your Step 5 notes rather than presenting the extraction as though audio was considered.
-
-#### Failure modes
-
-- **No browser tools in the session** — this path is unavailable. Don't improvise one with
-  `curl`/`yt-dlp`; Instagram's fetch path is confirmed broken *and* prohibited. Tell the
-  user, and offer running the skill locally on a Mac instead.
-- **No connected browser, or the extension is offline** — ask the user to open Chrome with
-  the extension connected. Don't retry blindly.
-- **The tab isn't on the post** — ask; never navigate there yourself.
-- **A login wall or age gate** — the user isn't signed in *in that browser profile*. Say
-  so; do not attempt to sign in, and do not enter credentials under any circumstances.
-- **Frames are black or the video won't seek** — the reel probably hasn't been played
-  through. Ask the user to play it fully once, then retry.
-- **Overlay text is illegible** — you're capturing at too low a resolution. Enlarge the
-  video element and zoom to the video region rather than screenshotting the whole window.
-
-### Instagram carousels (multi-image `/p/` posts)
-
-**Decide which of the two Instagram paths you're on before running anything.** A `/p/` URL
-is not automatically a carousel — Instagram serves single images, videos and carousels all
-under `/p/`. The distinguishing question is whether the post has a video: if it does, it's
-the reel path above. A carousel of still images has no video, no audio and no duration, so
-`capture-only.sh` is the wrong tool — it would record 45 seconds of a motionless slide and
-hand Whisper silence to transcribe.
-
-An `?img_index=N` parameter in the URL is a strong hint it's a carousel (it's how the web
-app addresses slide N), but its absence proves nothing — it only appears once the user has
-navigated between slides. When unsure, ask the user, or look at the preview frame.
-
-Same preflight as the reel path (`--check-capture` / `--install-capture`, macOS-only, for
-the same reason). Tell the user to open the post **in Google Chrome** and **click it open**
-so the post itself is on screen — not the profile grid or feed with the post's URL merely
-in the address bar. Then:
-
-```bash
-"${SKILL_DIR}/scripts/capture/capture-carousel.sh"
-```
-
-This takes no duration. It reuses the reel path's window detection, crop geometry and
-on-device Vision OCR, then replaces the video recording with **one screenshot per slide**.
-It rewinds to slide 1 first (a shared `?img_index=N` link opens mid-carousel), screenshots
-each slide, clicks the post's own "Next" control, and stops when that control disappears —
-which is how it knows it reached the end, with no slide count to supply. It prints
-`CAPTURE_DIR=<path>` and `slides: <n>` on success.
-
-If the Next control can't be driven — Chrome's "Allow JavaScript from Apple Events" is off,
-or Instagram renamed it — it falls back to prompting the user to click through each slide
-manually. Same capture, slower.
-
-**Why advancing the slides is inside the acquisition rule.**
-[`docs/capture/CONTRACT.md`](../../docs/capture/CONTRACT.md)'s stated test is *"who
-initiated the request to Meta's servers"*, and the answer here is nobody: the user opened
-the post themselves, Instagram already delivered and preloaded the slides into the page,
-and clicking Next renders images the browser is holding in memory. The prohibited row this
-superficially resembles — "scripting the play button on a page **a script opened**" — is
-about a script driving a whole session unattended, opening URLs and walking a list. That is
-a different act from advancing a post a human opened and is sitting in front of.
-
-What remains prohibited, and is deliberately not implemented: opening the post URL
-ourselves, logging in, walking a list of posts, and reading the slide image URLs out of the
-DOM to download them (an automated fetch to Meta's CDN). The human opens the post; the
-script only advances and records what is already on their screen.
-
-What you get:
-
-- `frame_001.jpg … frame_NNN.jpg` — one image per slide, in the order captured.
-- `frame_001.txt … frame_NNN.txt` — **per-slide OCR, one file per slide.** This is the
-  important difference from the reel path, and it is deliberate: the slide boundary is the
-  only signal telling you whether you're looking at one recipe or several (see below), so
-  it's preserved on disk rather than flattened.
-- `onscreen.txt` — every slide's OCR concatenated with `--- frame_NNN ---` delimiters, for
-  when you want to read it all at once. **Not deduped**, unlike the reel path's
-  `onscreen.clean.txt`: `dedupe-loop.mjs` exists because a reel *loops* and repeats itself,
-  whereas distinct slides are not repetitions. Folding "1 cup oats" on slide 2 into the same
-  line on slide 5 would silently merge two different recipes.
-- `caption.txt` — the caption as exact text, same `og:description` read as the reel path,
-  same caveats. Often absent on a carousel reached by in-app navigation (the SPA doesn't
-  always re-render the meta tag) — the per-slide OCR is the fallback, and since the crop
-  includes the caption panel it usually captured the caption anyway.
-- `cover.jpg` — a copy of slide 1. Unlike a reel (where `capture.sh` samples a third of the
-  way in to avoid a title card), a carousel's first slide is the cover the creator chose.
-
-**One recipe or several? — decide this before structuring, it changes the output.** A
-carousel is used both ways, and the two are easy to tell apart once you read the slides:
-
-- **N recipes, one per slide** — each slide is self-contained, with its own dish name and
-  its own ingredient list. Common for "5 lunchbox ideas" / "iron-rich baby meals" round-up
-  posts. Save these as **separate recipes**, one `save_recipe` call each, each with its own
-  title and its own `frame_NNN.jpg` as the thumbnail. Do not concatenate them into one
-  recipe with 30 ingredients — that recipe is not cookable and matches nothing.
-- **One recipe across many slides** — slide 1 is a title/hero, later slides carry
-  ingredients then method, and no slide stands alone. Save as **one recipe**, exactly like a
-  reel.
-- **Ambiguous** — if some slides are recipes and others are filler (a "save this post" call
-  to action, a promo card), extract the real ones and ignore the filler. If you genuinely
-  can't tell whether it's one recipe or several, ask the user rather than guessing; the
-  wrong choice is expensive to undo once saved.
-
-Run the Step 0.5 dedup check per recipe you're about to save, not once for the post — N
-recipes from one carousel are N separate library entries, and re-running a capture must not
-create duplicates of any of them. They share a `sourceUrl`, so match on title as well.
-
-**If the script says the post isn't open**, it checked the page and found the feed/profile
-grid rather than the post. Ask the user to click the post open — don't retry blindly, and
-don't fall back to capturing anyway: a screenshot of the feed OCRs into a dozen strangers'
-captions that read exactly like real evidence.
+**The acquisition rule, in short, because it is not negotiable:** the user opens and
+plays the post; you only record what is already on their screen. Never navigate to an
+instagram.com URL yourself, never click play, never walk a list of posts. See
+[`docs/capture/CONTRACT.md`](../../docs/capture/CONTRACT.md).
 
 ### Xiaohongshu (XHS/RED/小红书)
 
-Works on every platform this skill runs on, with no browser and no screen capture in the
-loop at all — unlike either Instagram path. `yt-dlp` ships a real `XiaoHongShu` extractor (unlike Instagram/
-TikTok), so this goes through `watch.py` the same way YouTube does; it auto-detects both
-URL shapes (`xiaohongshu.com/explore/<id>`, `xiaohongshu.com/discovery/item/<id>`, and
-`xhslink.cn/...` short links, which 302-redirect to the canonical form). Just run:
+Works on every platform, no browser or screen capture involved — `yt-dlp` ships a real
+`XiaoHongShu` extractor, so this goes through `watch.py` the same way YouTube does:
 
 ```bash
 python3 "$WATCH_SCRIPT" "<xiaohongshu-or-xhslink-url>" --detail balanced --resolution 1024 --out-dir "${OUT_DIR:-}"
 ```
 
-**A large share of XHS recipe content is a photo/图文 note, not a video** — a sequence of
-images plus a text description, no video/audio at all. `watch.py` probes the note first
-and branches automatically:
+**A large share of XHS recipe content is a photo/图文 note, not a video** — images plus a
+text description, no video or audio. `watch.py` probes and branches automatically, and the
+two shapes produce differently-shaped reports: a photo note has no transcript and every
+step's `timestampSeconds` is `null` (not an evidence gap to chase), and its description is
+the caption-text equivalent of Instagram's `caption.txt`.
 
-- **Photo/图文 note** (no video stream — common for recipe cards, ingredient-list graphics,
-  step-by-step photo sequences): downloads every image in the carousel instead of video
-  frames. The report you get back has no transcript and no frame timestamps — every step's
-  `timestampSeconds` is `null` for this note type, not an evidence gap to chase. The note's
-  **description is the caption-text equivalent of Instagram's `caption.txt`**: treat it as a
-  first-class source per Step 2 — it very often carries the complete ingredient list and
-  numbered steps as plain text, sometimes more complete than any single image. Read every
-  image path the report lists, same as you'd Read video frames.
-- **Video note**: proceeds exactly like the YouTube path from here — same `--detail`/
-  `--resolution`/`--start`/`--end`/`--timestamps` flags, same transcript-cue pass, same
-  Whisper fallback if the note has no native captions (most XHS videos don't; expect to
-  fall back to Whisper on audio far more often than on YouTube).
-
-**Known limits, tested 19 Aug 2026 against one real photo-note share link:**
-
-- The tested link needed no login/cookies at all — public XHS content downloaded cleanly
-  with a bare, anonymous `yt-dlp` request, unlike Instagram. This has **not** been verified
-  against a currently-live video note (the one plausible test URL available — from
-  `yt-dlp`'s own extractor test suite — now returns empty formats/thumbnails, most likely
-  because the note itself has since been deleted, not because of an extraction failure).
-  Treat the video-note path as implemented-by-construction (identical code path to
-  YouTube) rather than independently verified end-to-end.
-- Real XHS share links carry an `xsec_token` query param tied to how the link was shared;
-  a bare note-id URL with no token attached may fail to load content even for a public
-  note. Always use the actual link the user pasted (or its yt-dlp-resolved canonical form)
-  rather than stripping query params down to just the note id before downloading —
-  stripping to the bare id is fine for the Step 0.5 dedup *comparison*, not for the
-  request itself.
-- If a note does turn out to need a login (private content, or XHS tightens anonymous
-  access later), there is currently no cookie/local-capture fallback for XHS the way there
-  is for Instagram — tell the user plainly rather than attempting one that doesn't exist.
+**Read `${SKILL_DIR}/references/xiaohongshu.md` before structuring one** — it covers both
+note types, the `xsec_token` short-link handling that Step 0.5's dedup depends on, and the
+tested limits.
 
 ### Focusing on a section (higher frame rate)
 
@@ -709,7 +430,7 @@ Produce a recipe JSON matching this schema exactly:
   "sourceUrl": "string (the resolved canonical URL — see Step 1's Xiaohongshu note on short links)",
   "sourcePlatform": "instagram | youtube | xiaohongshu",
   "creatorHandle": "string",
-  "thumbnailFramePath": "path to the single best-representative frame from Step 1 (not a new download — pick from what you already extracted)",
+  "thumbnailFramePath": "path to the full-resolution `thumb_*.jpg` re-grab of your #1 pick (Step 5.5 — rank on the frames you already extracted, then re-grab that timestamp; not a new download)",
   "servings": "integer, best estimate if unstated (say so in confidence notes)",
   "totalTimeMinutes": "integer or null",
   "ingredients": [
@@ -820,10 +541,10 @@ Skip this list entirely (say so plainly) if the extraction was clean and nothing
 
 ## Step 5.5 — pick the best 3 frames for preview thumbnails
 
-The saved schema only carries a single thumbnail, but still do this ranking — it's what
-feeds that one field today and what a future multi-image gallery would consume without
-redoing the work. From the frames you already read in Step 2, pick the 3 strongest
-candidates using these criteria, in order:
+Rank three, not one: #1 becomes the recipe's thumbnail and #2/#3 upload as candidates,
+which nourishible keeps as a 60-day reviewable backup so a bad #1 can be swapped during
+review without re-extracting. From the frames you already read in Step 2, pick the 3
+strongest candidates using these criteria, in order:
 
 1. **Finished-dish shot** — the plated/finished result, well-lit, food filling most of the
    frame, no hands/utensils obscuring it. This is always candidate #1 if one exists. A
@@ -851,42 +572,118 @@ your own ingredients list (does the shape/color/components on screen match what 
 actually said this recipe contains?) before recording it, and drop straight to the next
 candidate if it doesn't.
 
-**A pixel-width check only counts if those pixels were captured, not upscaled.** A frame
-screenshotted from a portrait video in a landscape viewport can report 750px while
-carrying ~440px of real detail; resizing or zooming after the fact never adds information
-back. On the agent-controlled-browser path, capture rotated (Step 1) so the number and the
-detail agree. **Check your #1 pick's actual pixel width before moving on** — `identify` (ImageMagick) or
-`python3 -c "from PIL import Image; print(Image.open('<path>').size)"` on the frame file.
-Composition can look right in a downscaled preview and still be a soft, blurry image once
-it's the full-size card/OG thumbnail everyone sees — Step 1's `--resolution 1024` should
-already guarantee this, but nothing enforces that flag was actually honored (a re-run
-without it, a caller-supplied `--out-dir` pointed at frames from an older invocation, etc.).
-**Reject anything under 512px wide** and re-extract at `--resolution 1024` before picking
-again — don't persist a low-res frame just because it's the best-composed one available; a
-sharper second-best composition beats a soft #1.
+### Rank on the reading frames, upload a fresh full-resolution grab
 
-Record your #1 pick's frame path — that's the one to persist as the recipe's thumbnail in
-Step 6.5 below. Pass #2 and #3's frame paths to `save_recipe`/`update_recipe` as thumbnail
-candidates too (see Step 6.5) — nourishible keeps them as a 60-day reviewable backup, it just
-doesn't show them anywhere yet.
-
-**Manual override:** if the auto-picked #1 is wrong (a bad frame, or you'd rather use a
-specific moment — e.g. the caller told you which timestamp to use), skip the ranking and
-grab exactly that frame instead:
+**Never upload a reading frame directly.** The frames you read in Step 2 are deliberately
+downscaled — 1024px wide at JPEG `-q:v 4` — because token cost scales with pixels. That is
+the right size to *judge* composition and the wrong size to *be* the card image: it is the
+full-size card/OG thumbnail everyone sees, and a 1024px `-q:v 4` frame lands on it visibly
+soft. Rank on the reading frames, then re-grab your #1 pick's **timestamp** from the video
+at full resolution:
 
 ```bash
 python3 "$FRAMES_SCRIPT" "$VIDEO_PATH" "$OUT_DIR" --thumbnail-at "MM:SS"
 ```
 
-This uses the same accurate two-stage seek as every other timestamp grab, so it won't
-reproduce the ghosted-frame bug a fast/naive seek can cause. Treat its output as your #1 pick
-and continue as normal — #2/#3 from the auto-ranking above still get saved as backups.
+`$VIDEO_PATH` is the local file Step 1 already downloaded (`watch.py` reports it, in the
+`--out-dir` it names) — this re-reads that file, it does not re-download. Each frame in
+Step 1's output carries its `timestamp_seconds` — that's the value to pass.
+This writes `thumb_0000.jpg` at the source's native resolution (capped at 1440px wide /
+1998px tall, never upscaled) at `-q:v 2`, using the same accurate two-stage seek as every
+other timestamp grab, so it won't reproduce the ghosted-frame bug a fast/naive seek can
+cause. It writes under its own `thumb_` prefix, so it leaves your reading and cue frames
+alone. On a 1080×1920 reel that's a native 1080×1920 grab — roughly ten times the real
+detail of the reading frame you ranked. **This grab, not the reading frame, is what Step 6.5
+encodes and uploads.**
 
-**Don't skip this and fall back to a platform-provided thumbnail** (YouTube's
-`i.ytimg.com/vi/<id>/hqdefault.jpg`, an Instagram CDN URL, etc.) just because it's easier to
-grab from video metadata — it isn't a frame *you* picked for quality (no control over
-hands/face/text in it), and platform CDN links can be signed/expiring. Always upload an
-actual picked frame via `set_recipe_thumbnail`.
+**If none of the frames you read is a clean finished-dish shot, search the full timeline
+before settling.** The reading pass samples perhaps 80 frames; the video has thousands, and
+the plated shot is often a brief held moment between two of them. This costs no image
+tokens — it scores frames with ffmpeg locally:
+
+```bash
+python3 "$FRAMES_SCRIPT" "$VIDEO_PATH" "$OUT_DIR" --rank-candidates
+```
+
+It returns up to 12 timestamps: the sharpest correctly-exposed frame in each slice of the
+timeline, each with a `sharpness` score from 0 to 1 (1 = the sharpest frame in this video).
+On a 6-minute video it scores 353 frames in about 6 seconds. Then grab that shortlist in
+**one** call and read it:
+
+```bash
+python3 "$FRAMES_SCRIPT" "$VIDEO_PATH" "$OUT_DIR" --timestamps "12.0,31.5,48.0,77.2"
+```
+
+This writes `cand_*.jpg` at 384px wide — about 350 image tokens each, so a 12-frame
+shortlist costs roughly 4.2k. That is enough to judge composition and pick the finished
+dish; it is deliberately far below the reading resolution, because your #1 pick gets
+re-grabbed at full resolution with `--thumbnail-at` afterwards anyway.
+
+**Use `--timestamps`, not a loop of `--thumbnail-at` calls.** `--thumbnail-at` clears its
+own `thumb_*.jpg` prefix on entry, so calling it once per candidate leaves you with only
+the last one — while reporting a successful path each time. It also grabs at full
+thumbnail resolution (~2.8k tokens a frame on a 1080x1920 reel), so a 12-candidate loop
+would cost ~33k tokens to end up with a single file.
+
+**Prefer a candidate with high `sharpness`**: a frame at 0.5 is only middling for its own
+video and will look soft as a full-size card, even if the composition is good.
+
+**Blur disqualifies a frame here and nowhere else.** A motion-blurred frame — hands pouring,
+stirring, adding — is often the *most* informative one for the recipe itself, so the reading
+pass keeps it and Step 3.5 may well timestamp a step from it. It just can't be a card image,
+so the candidate pool excludes it: stretches of video with nothing sharp in them are dropped
+outright rather than contributing their least-bad frame. Don't apply this gate in reverse and
+discard blurry frames as evidence.
+
+**Read the shortlist; do not trust its order.** These are frames worth *looking at*, not a
+ranked pick, and the tool says so in its own output. Pixel statistics cannot tell a finished
+dish from raw ingredients: measured on a real recipe video, the raw tray scored *higher* on
+both sharpness and saturation than the plated result, because uncooked food is uniformly
+vivid while a cooked dish is browner and softer. A ranker built on those signals picks
+confidently wrong. Only you can tell which frame is the finished dish.
+
+Useful flags: `--candidates N` for a longer or shorter shortlist, `--rank-fps F` to sample
+denser than 1/sec, `--start`/`--end` to search one region (timestamps come back absolute
+either way), and `--candidate-resolution W` on the `--timestamps` grab if 384px isn't
+enough to judge a particular video. Expect fewer candidates back than you asked for — a
+slice whose sharpest frame is still soft is dropped rather than spending a slot on the
+least-bad frame of a blurry stretch.
+
+**Manual override:** the same command is how you override the ranking outright — if the
+auto-picked #1 is wrong, or the caller told you which moment to use, pass that timestamp
+instead and treat the result as your #1 pick. #2/#3 from the ranking still get saved as
+backups.
+
+**A pixel-width check only counts if those pixels were captured, not upscaled.** A frame
+screenshotted from a portrait video in a landscape viewport can report 750px while
+carrying ~440px of real detail; resizing or zooming after the fact never adds information
+back. On the agent-controlled-browser path, capture rotated (Step 1) so the number and the
+detail agree — and note that path has no video file to re-grab from, so its screenshots
+*are* the thumbnail source and their capture resolution is the only resolution you get.
+**Check the file you're about to upload** — `identify` (ImageMagick) or
+`python3 -c "from PIL import Image; print(Image.open('<path>').size)"`. **Reject anything
+under 512px wide** (the server rejects it too) and re-grab before picking again; don't
+persist a low-res frame just because it's the best-composed one available.
+
+Record your #1 pick's `thumb_*.jpg` path — that's the one to persist as the recipe's
+thumbnail in Step 6.5 below. Pass #2 and #3's frame paths to `save_recipe`/`update_recipe`
+as thumbnail candidates too (see Step 6.5) — nourishible keeps them as a 60-day reviewable
+backup, it just doesn't show them anywhere yet. Those two are fine to send as reading
+frames; only the #1 pick needs the full-resolution re-grab.
+
+**Never fall back to a platform-provided thumbnail** (YouTube's
+`i.ytimg.com/vi/<id>/maxresdefault.jpg`, an Instagram CDN URL, etc.) just because it's easier
+to grab from video metadata. It isn't a frame *you* picked for quality — it's the creator's
+click-through art, so it typically carries a face, a caption bar, or an arrow graphic — and
+platform CDN links can be signed or expiring, leaving the recipe thumbnail-less later.
+
+Concretely: **do not pass `thumbnailUrl` to `save_recipe` or `update_recipe`.** That field
+exists for recipes typed in by hand with an image already on the web; it is not an escape
+hatch for this flow, and passing a platform CDN URL there is how two extractions on 29 Aug
+2026 shipped with `i.ytimg.com` art instead of a picked frame. The thumbnail always travels
+as bytes — `thumbnailImageBase64` on `save_recipe`, or `imageBase64` on
+`set_recipe_thumbnail`. If you have no usable frame at all, save with no thumbnail and say
+so; that is the only acceptable alternative.
 
 ## Step 6 — write the output
 
@@ -903,7 +700,7 @@ in the nourishible app, under *their own* account.
 
 ### Connect nourishible, if you haven't already
 
-If you can see `save_recipe`, `update_recipe`, `set_recipe_thumbnail`, `list_my_recipes`,
+If you can see `save_recipe`, `update_recipe`, `create_thumbnail_upload`, `list_my_recipes`,
 `get_my_recipe`, `search_recipes`, and `get_recipe` as callable tools in this session, skip
 to "Save the recipe" below — you're already connected. **If you're running as the
 `nourishible` Claude Code plugin**, this is already true by construction: the plugin bundles
@@ -939,10 +736,10 @@ second place for it to drift out of sync and break.
 
 ### Save the recipe
 
-**A save is `save_recipe`/`update_recipe` *and* `set_recipe_thumbnail` together — not done
-until both have succeeded.** This costs nothing extra: Step 5.5 already picked the #1 frame
-from images you already read in Step 2, so setting it is one more tool call on data already
-in hand, not a re-extraction. Never report a recipe as saved, and never move to Step 7,
+**A save is `save_recipe`/`update_recipe` *and* a thumbnail upload together — not done
+until both have succeeded.** This is cheap: Step 5.5 already ranked the frames you read in
+Step 2 and re-grabbed the #1 pick's timestamp at full resolution, so setting it is one more
+tool call on a file already on disk — not a re-download and not a fresh extraction pass. Never report a recipe as saved, and never move to Step 7,
 having called only `save_recipe`/`update_recipe` — a thumbnail-less "success" is a save you
 still owe the other half of.
 
@@ -960,59 +757,59 @@ still owe the other half of.
    handles a match: tell the user it's already saved and ask whether they want to
    re-extract, then `update_recipe` on that id if they do (still finishing with the
    thumbnail step below if you do). Skip the rest of this list for this attempt otherwise.
-4. **Thumbnail — required, immediately, same turn:** call `set_recipe_thumbnail` with the
-   saved/updated recipe's `id`, passing Step 5.5's #1 pick's image bytes, base64-encoded, as
-   `imageBase64` — the remote server can't read a file path off your machine, so Read the
-   frame file and encode it yourself before calling the tool. Do this every time there's a
-   frame to give it — a recipe saved without this call shows with no thumbnail in the
-   library. The one exception is Step 5.5 genuinely finding zero usable frames (no food
+4. **Thumbnail — required, immediately, same turn. Upload it directly; don't base64 it.**
+   Call `create_thumbnail_upload` with the saved/updated recipe's `id`. It returns a
+   short-lived, single-use `uploadUrl` and a ready-to-run `command`. PUT the raw bytes:
+
+   ```bash
+   curl -X PUT --data-binary @thumb_0000.jpg -H 'Content-Type: image/jpeg' "<uploadUrl>"
+   ```
+
+   Send Step 5.5's #1 pick — the full-resolution `thumb_*.jpg` re-grab, not the reading
+   frame you ranked — **at full resolution. Do not downscale it and do not re-compress it.**
+   The bytes never pass through your context on this path, so image quality costs you
+   nothing; a 200KB 1280x720 frame is as cheap to send as a 7KB one. For #2/#3, request a
+   link each with `kind: "candidate"` and PUT them the same way. Do this every time there's
+   a frame to give — a recipe saved without a thumbnail shows blank in the library. The one exception is Step 5.5 genuinely finding zero usable frames (no food
    visible in any frame, not just "the best one is mediocre") — in that specific case only,
    say plainly in your Step 6 summary that the recipe saved with no thumbnail and why,
    rather than silently skipping the call or fabricating a substitute (see Step 5.5's note
    on platform-provided thumbnails).
 
-   **Downscale before encoding, and re-fetch the URL to confirm what actually landed.**
-   You have to read the encoded string and then reproduce it verbatim in the tool call, and
-   there is a second failure mode *independent of* your own context limit: observed 24 Aug
-   2026, `set_recipe_thumbnail` calls have stored a silently truncated JPEG while still
-   returning a normal-looking success response with the *correct* width/height in it — the
-   saved file itself renders as a clean strip of image followed by flat gray, and nothing in
-   the response tells you it happened. In the same session, calls started hard-failing
-   (`Tool execution failed`) across every tool on this connector, including trivial reads —
-   which points at general connection/session instability on the remote server rather than a
-   clean byte-count ceiling, so **don't treat any specific size as a proven-safe target**;
-   a smaller payload is still lower-risk, but the only real defense is checking the result:
-
-   - Keep payloads modest anyway — **aim for ≤10k base64 characters (~7–8 KB of JPEG)**. A
-     frame in the 300–380px range at quality ~55–60 lands there. This is genuinely in
-     tension with Step 5.5's "reject anything under 512px" rule — resolve it by cropping
-     tight to the dish (below) before you shrink, not by quietly keeping a below-512px
-     frame; if you still can't clear both bars, say so in your Step 6 summary rather than
-     silently picking one.
-   - **Always re-fetch the `thumbnailUrl` the response returns and look at it** before
-     treating the thumbnail as done — the response alone cannot tell you whether this
-     happened, at any size.
-   - If a call fails outright (not just a truncated result), retry once — this has recovered
-     on a retry in testing — but if reads on the same connection are also failing, that's a
-     connector-level outage, not something a smaller image fixes; say so plainly rather than
-     shrinking further and retrying in a loop.
+   **Crop for composition, not for size.** Cropping still matters — it's what makes the
+   card the dish rather than the dish plus half a countertop — but crop to a **fixed aspect
+   ratio** (4:3, or 1:1), never a free-form "tight" box. Free-form tight crops are what
+   produced the 900x339 and 900x382 letterbox strips that shipped in late Aug 2026, with the
+   bowl sliced off top and bottom. If the dish doesn't fit a 4:3 window without cutting into
+   it, widen the crop and accept some background — background beats an amputated bowl. Crop
+   away a burnt-in caption where the composition allows, so the card is the food rather than
+   the food plus someone else's subtitles.
 
    ```python
    from PIL import Image
-   im = Image.open(FRAME).convert('RGB')
-   im.crop(BOX).resize((320, 240), Image.LANCZOS).save(
-       OUT, 'JPEG', quality=55, optimize=True, subsampling=2)
+   TARGET_ASPECT = 4 / 3
+   im = Image.open(FRAME).convert('RGB')      # the thumb_*.jpg re-grab
+   w, h = im.size
+   nw, nh = (int(h * TARGET_ASPECT), h) if w / h > TARGET_ASPECT else (w, int(w / TARGET_ASPECT))
+   left, top = (w - nw) // 2, (h - nh) // 2   # shift to centre the food, keep nw/nh
+   im.crop((left, top, left + nw, top + nh)).save(OUT, 'JPEG', quality=92, subsampling=1)
    ```
 
-   Crop to the dish before resizing rather than just shrinking the whole frame — spending
-   the pixels on food instead of letterboxing buys back most of the quality the
-   compression costs. Crop away the burnt-in caption too where the composition allows
-   (many reels keep the dish clear of the text band), so the card is the food rather than
-   the food plus someone else's subtitles. At this size the source frame's sharpness
-   matters far more than the quality setting: compressing an upscaled frame wastes bytes
-   on blur, so fix Step 1's capture before trading away quality here. Do **not** save the
-   recipe thumbnail-less just because encoding is fiddly at this budget, and do not fall
-   back to a platform CDN URL (see Step 5.5).
+   Note quality 92 and no `thumbnail()` call: on the upload path there is no reason to
+   shrink or to compress hard. The only floor that still applies is the server's — **at
+   least 512px wide**, or the upload is rejected with `thumbnail_too_small`.
+
+   **Fallback, only if you genuinely cannot run shell commands:** `set_recipe_thumbnail`
+   with `imageBase64` (or `thumbnailImageBase64` on `save_recipe`) still works. Be aware
+   what it costs: base64 runs ~0.72 tokens per character, and you pay it twice — once
+   reading the string in, once emitting it verbatim — so a 40KB JPEG is roughly 39k tokens
+   each way. On that path only, downscale to 512x384 at quality 75 first, step down
+   quality 75 -> 70 -> 65 -> 60 if a call fails, never below 512px wide, and **re-fetch the
+   returned `thumbnailUrl` and look at the image** before calling it done: this path has
+   silently stored truncated JPEGs while returning a normal-looking success (observed
+   24 Aug 2026), and nothing in the response reveals it. The upload path has no such
+   failure mode — the bytes are stored exactly as sent.
+
 5. Read back each tool's response for the real `id`/`slug` (and, once thumbnailed, confirm
    the thumbnail is set) that nourishible assigned, and use that — not anything you
    invented — in your Step 6 summary to the user.
@@ -1084,14 +881,18 @@ re-extract or adjust, leave it.
     a recipe from frames with no readable text.
 - **Instagram, but you can't run the capture scripts** (remote agent, non-Darwin shell,
   scripts not on the machine with Chrome) — this is **not** a dead end. Check for browser
-  tools and use `### Instagram — agent-controlled browser` in Step 1. Only report Instagram
+  tools and use the agent-controlled browser route (`references/instagram.md`). Only report Instagram
   as unavailable when that path is missing too, and say which piece is missing rather than
   "Instagram is macOS-only".
 - **Agent-controlled browser path fails (Instagram)** — see that section's own failure
   modes in Step 1. The two that matter most: never navigate to the post yourself to "fix"
   a missing tab, and never retry a login wall — ask the user in both cases.
-- **Thumbnail base64 too large to relay** — downscale and re-encode (Step 6.5, item 4);
-  don't skip the thumbnail and don't substitute a platform CDN URL.
+- **Thumbnail upload failed** — if `create_thumbnail_upload` isn't available or the PUT
+  can't run, fall back to `set_recipe_thumbnail` with base64 at 512×384/quality 75 and
+  verify the stored image (Step 6.5, item 4). A `thumbnail_too_small` rejection means the
+  frame is under 512px wide: re-grab it with `--thumbnail-at`, don't upscale it. An expired
+  or already-used link is not an error to retry — request a new one. Never skip the
+  thumbnail, substitute a platform CDN URL, or pass `thumbnailUrl`.
 - **No usable ingredient list found anywhere** (frames, caption, audio) — don't fabricate
   one. Tell the user the video doesn't appear to state ingredients/quantities clearly
   enough to extract, and offer to proceed with what's inferable (dish name + technique
@@ -1107,126 +908,54 @@ re-extract or adjust, leave it.
 
 ## Token efficiency
 
-This skill burns tokens primarily on frames. Order of magnitude: 80 frames at 512px wide is
-roughly 50-80k image tokens; bumping to 1024px (this skill's default, for legible on-screen
-text) roughly quadruples that. The transcript is cheap by comparison — a few thousand
-tokens at most for a 10-minute video.
+Frames dominate everything else. They're capped by *area* (0.8 MP), not width, so a
+portrait reel and a landscape video cost the same ~800-1070 image tokens per frame; before
+that cap a 9:16 reel cost 3.2x what a 16:9 video did at the same `--resolution`. A 60-80
+frame pass is therefore ~50-85k image tokens. The transcript is cheap by comparison — a few
+thousand tokens at most for a 10-minute video.
+
+The four levers that matter, in order of size:
+
+1. **Only read the reference file your platform needs** (see "Reference files" above). A
+   YouTube run that reads `references/instagram.md` anyway has paid ~5k tokens for
+   procedure it will never execute.
+2. **Set the frame budget from the caption/description** (Step 1) before extracting.
+   Dropping to `--detail efficient` when the text already carries a complete quantified
+   ingredient list roughly halves the frame spend and discovers nothing less.
+3. **`--section` screening** (Step 1) before downloading anything long: the difference
+   between decoding 90 seconds and 20 minutes.
+4. **Grab the Step 5.5 shortlist with `--timestamps`, not a `--thumbnail-at` loop** —
+   ~4.2k tokens for 12 candidates instead of ~33k, and it actually keeps all 12 files.
+
+The final thumbnail is free on the `create_thumbnail_upload` path and expensive on the
+base64 fallback (~39k tokens each way for a 40KB JPEG, paid on read and again on emit),
+which is the whole reason to prefer the upload.
+
+What *not* to trim: frame dedup is deliberately conservative on localised change, because
+a recipe reel that states its ingredients as a small text overlay over an unchanging pan
+produces frames that are near-identical on average and completely different in the only
+part that matters. Don't tighten it to save frames.
 
 ## Security & Permissions
 
-**What this skill does:**
-- Runs `yt-dlp` locally to download the video and pull native captions when the source
-  supports them (public data; the request goes directly to whatever host the URL points
-  at).
-- Runs `ffmpeg`/`ffprobe` locally to extract frames as JPEGs and, when Whisper is needed, a
-  mono 16 kHz audio clip.
-- Sends the extracted audio clip to Groq's Whisper API (`api.groq.com`) when `GROQ_API_KEY`
-  is set (preferred — cheaper, faster), or OpenAI's (`api.openai.com`) when
-  `OPENAI_API_KEY` is set and Groq is not.
-- Writes the downloaded video, frames, audio, and an intermediate transcript to a working
-  directory under the system temp dir (or `--out-dir`) so you can `Read` them.
-- **For a Xiaohongshu photo/图文 note:** downloads the note's images directly from XHS's
-  CDN (`sns-webpic-qc.xhscdn.com` and related `xhscdn.com` hosts) instead of a video — same
-  "public data, direct request, written to the working directory" shape as the video path,
-  just images instead of extracted frames.
-- Reads/creates `~/.config/watch/.env` (mode `0600`) to store the Whisper API key(s) and a
-  `SETUP_COMPLETE` marker.
-- Calls the `save_recipe`/`update_recipe`/`set_recipe_thumbnail`/`list_my_recipes`/
-  `get_my_recipe`/`search_recipes`/`get_recipe` nourishible tools (Step 6.5) once
-  connected — these persist the structured recipe (and a thumbnail, if picked) to the
-  user's real nourishible library. That's the point of Step 6.5, not a side effect to be
-  surprised by.
+Summary: this skill runs `yt-dlp`/`ffmpeg` locally, writes frames and audio to a working
+directory under the system temp dir, sends only an extracted audio clip to Groq/OpenAI
+Whisper when native captions are missing, and calls the connected nourishible tools to
+save the recipe. It does not upload the video, does not log in to any platform, and does
+not persist anything outside the working directory and the user's own nourishible account.
 
-**On the Instagram agent-controlled-browser path**, this skill asks for no system
-permissions at all: it drives a Chrome the user already has open, through whatever browser
-tooling the agent is configured with, and reads only the page the user themselves
-navigated to. It takes screenshots of that tab and evaluates script in it to pause/seek
-the already-playing `<video>`; it performs no navigation, no clicking, no form-filling, no
-sign-in, and no requests to Instagram of its own. Nothing captured leaves the session
-except the frames and caption text that feed Step 2/3, same as every other path.
+The Instagram local-capture path additionally asks for macOS Screen Recording, Automation
+access to Chrome, and possibly Microphone — the YouTube path never touches these.
 
-**On the Instagram local-capture path** (`scripts/capture/`), this skill asks for real
-system permissions the YouTube path never touches — worth being explicit about rather than
-letting it surprise the user mid-run:
-- **Screen Recording** (macOS) — required for `capture-only.sh` to record anything at all.
-  `setup.py --install-capture` opens System Settings to the right pane when this isn't
-  granted; it cannot grant it for the user, by OS design.
-- **Microphone**, only if no virtual audio device (BlackHole/Loopback) is installed —
-  `capture.sh` falls back to it rather than failing, and says so plainly in its output.
-- **Automation access to Google Chrome** (AppleScript) — to find the reel window and read
-  the caption text. Nothing else is scripted in Chrome; no navigation, no clicking, no
-  form-filling.
-- Nothing captured is sent anywhere except the frames/transcript/OCR text that already
-  feed into Step 2/3's structuring, same as the YouTube path. The OCR pass
-  (`scripts/capture/ocr.swift`) runs entirely on-device via Apple's Vision framework — no
-  network call, no API key.
-- **No automated request is ever made to Instagram.** The recording captures what's
-  already rendered on the user's own screen because the user opened and played the post —
-  see [`docs/capture/CONTRACT.md`](../../docs/capture/CONTRACT.md) for why that distinction
-  is load-bearing, not incidental, and is binding on this skill, not just a suggestion.
-
-**What this skill does NOT do:**
-- Does not upload the video itself to any API — only the extracted audio goes out, and
-  only when native captions are missing and Whisper isn't disabled.
-- Does not access any platform account beyond public data (no login, no session cookies,
-  no posting). Does not attempt an Instagram cookie/API fallback if capture fails — that
-  path is confirmed broken upstream, not a corner case to retry into.
-- Does not call any third-party API for extraction itself — Instagram's OCR pass is
-  on-device Vision, not a hosted service; the structuring itself happens in your own
-  reasoning, same as any other skill output.
-- Does not implement its own OAuth/network client for the save step — it only ever calls
-  already-connected tools; if none are connected, it stops and tells the user to connect
-  one rather than inventing a parallel auth path.
-- Does not persist anything outside the working directory *and* the user's own nourishible
-  account via the connected tools.
-
-**Bundled files:**
-- `scripts/watch.py` (entry point), `scripts/download.py` (yt-dlp wrapper — also handles
-  Xiaohongshu note-type probing and photo/图文 image downloads), `scripts/frames.py`
-  (ffmpeg frame extraction), `scripts/transcribe.py` (caption selection + Whisper
-  orchestration), `scripts/whisper.py` (Groq/OpenAI clients), `scripts/config.py` (shared
-  config helpers) — the YouTube and Xiaohongshu paths.
-- `scripts/setup.py` — preflight/installer for both paths (`--check`/`--install` for
-  YouTube, `--check-capture`/`--install-capture` for Instagram, gated separately so a
-  YouTube-only user is never asked to install the Instagram half).
-- `scripts/capture/` (`capture.sh`, `capture-only.sh`, `capture-carousel.sh`,
-  `read-caption.sh`, `ocr.swift`, `dedupe-loop.mjs`) — the Instagram path;
-  `capture-carousel.sh` is the still-image carousel variant of `capture-only.sh`. See Attribution below for where this came from,
-  and [`docs/capture/CONTRACT.md`](../../docs/capture/CONTRACT.md) before changing anything
-  about how it acquires content.
-
-Review all of the above before first use to verify behavior.
-
-**A note on restricted environments:** some agents run in a sandbox with its own outbound
-network allowlist (a cloud/managed execution environment, not this skill or nourishible).
-If the source platform's domain, `xhscdn.com`, `api.groq.com`/`api.openai.com`, or the
-nourishible MCP server itself isn't on that list, the relevant request is blocked at the
-proxy before this skill's own logic ever runs — see "Blocked by this environment's own
-network policy" under Failure modes above for how that should be handled and reported.
+**Full audit detail — every binary, every network destination, every permission, and the
+"what this skill does NOT do" list — is in `${SKILL_DIR}/references/security.md`.** Read it
+before first use, or whenever a user asks what the skill does to their machine.
 
 ## Attribution
 
-This skill is the merged, publishable successor to work that lived in nourishible's own
-private repository:
-
-- The YouTube download/frame-extraction/transcription approach (`scripts/*.py`, excluding
-  `capture/`) originates from **`/watch`**, MIT-licensed, by
-  [bradautomates](https://github.com/bradautomates/claude-video). That skill's own
-  license/attribution is carried forward here — see its homepage for the original.
-- The recipe-specific structuring, confidence-scoring, and thumbnail-selection approach
-  originates from nourishible's own internal `/recipe-extract` skill, the reference
-  implementation nourishible's backend extraction pipeline is descended from.
-- The Instagram screen-capture pipeline (`scripts/capture/`) originates from `ig-saved`, an
-  earlier project by the same team, retired into nourishible's private repository and
-  vendored here in turn — window-detection/crop-geometry logic and the OCR/caption-reading
-  approach are carried forward as-is; the parts specific to `ig-saved`'s own standalone
-  local-tool use case (a prototype UI, a catalog store, a job queue) were not, since this
-  skill's own structuring (Step 2/3) and nourishible's library already cover that ground.
-  [`docs/capture/CONTRACT.md`](../../docs/capture/CONTRACT.md) is the acquisition rule this
-  pipeline exists to satisfy — read it before changing anything about how content is
-  captured.
-
-If you're looking for the general-purpose (non-recipe) video-Q&A skill `/watch` itself
-provides, its original, actively maintained version is at
-[bradautomates/claude-video](https://github.com/bradautomates/claude-video) — this skill
-is recipe-specific and doesn't attempt to replace that broader use case.
+This skill is the merged, publishable successor to work from nourishible's private
+repository, building on **`/watch`** (MIT, by
+[bradautomates](https://github.com/bradautomates/claude-video)) for the download/frame/
+transcription approach, nourishible's internal `/recipe-extract` for the structuring, and
+`ig-saved` for the Instagram capture pipeline. Full credit, licence notes, and what was
+and wasn't carried forward: `${SKILL_DIR}/references/attribution.md`.
