@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PLUGIN_ROOT="${1:-${CLAUDE_PLUGIN_ROOT:-}}"
+PLUGIN_DATA_DIR="${2:-${CLAUDE_PLUGIN_DATA:-}}"
+
+if [[ -z "$PLUGIN_ROOT" ]]; then
+  echo "nourishible local MCP: plugin root was not provided" >&2
+  exit 2
+fi
+if [[ -z "$PLUGIN_DATA_DIR" ]]; then
+  PLUGIN_DATA_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/nourishible-mcp"
+fi
+
+PYTHON_BIN=""
+for candidate in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    if "$candidate" -c 'import sys; raise SystemExit(sys.version_info < (3, 10))' 2>/dev/null; then
+      PYTHON_BIN="$(command -v "$candidate")"
+      break
+    fi
+  fi
+done
+if [[ -z "$PYTHON_BIN" ]]; then
+  echo "nourishible local MCP requires Python 3.10 or newer" >&2
+  exit 2
+fi
+
+VENV_DIR="$PLUGIN_DATA_DIR/venv"
+VERSION_FILE="$VENV_DIR/.nourishible-version"
+PACKAGE_VERSION="$($PYTHON_BIN -c "import tomllib; print(tomllib.load(open('$PLUGIN_ROOT/pyproject.toml', 'rb'))['project']['version'])")"
+
+if [[ ! -x "$VENV_DIR/bin/nourishible-mcp-local" ]] || \
+   [[ ! -f "$VERSION_FILE" ]] || \
+   [[ "$(<"$VERSION_FILE")" != "$PACKAGE_VERSION" ]]; then
+  mkdir -p "$PLUGIN_DATA_DIR"
+  "$PYTHON_BIN" -m venv "$VENV_DIR"
+  "$VENV_DIR/bin/python" -m pip install --disable-pip-version-check --quiet "$PLUGIN_ROOT" >&2
+  printf '%s\n' "$PACKAGE_VERSION" > "$VERSION_FILE"
+fi
+
+exec "$VENV_DIR/bin/nourishible-mcp-local"
+

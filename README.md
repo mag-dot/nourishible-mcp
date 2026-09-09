@@ -12,7 +12,16 @@ lives in git; the working tree is always what you should install today.
 
 ## What's here
 
-Two pieces, each doing one job:
+The Claude Code plugin installs two MCP servers together:
+
+- **Nourishible Local** — a local stdio MCP server carrying the recipe workflow and
+  extraction scripts. It exposes setup checks, YouTube/XHS extraction, an MCP resource,
+  and a reusable recipe prompt. Its Python environment is created once in Claude's
+  persistent plugin-data directory.
+- **Nourishible** — the hosted OAuth MCP server that reads and writes the user's library.
+  Account credentials stay there and never enter the local process.
+
+The source tree keeps the compatibility skill as well:
 
 - **[`skills/recipe-nourishible/`](./skills/recipe-nourishible)** — extraction. This is
   what runs *in your agent*: it watches a video or note (YouTube and Xiaohongshu/XHS
@@ -25,7 +34,7 @@ Two pieces, each doing one job:
   distinct recipes — one per slide — it can save them as separate recipes, each linking
   back to its own `?img_index=N` slide. It has no idea what a nourishible account is — it just produces a structured
   recipe.
-- **A hosted, remote MCP server**, set up from `nourishible.com/ai-agent` — saving, under your account.
+- **A hosted, remote MCP server**, set up from `mcp.nourishible.com` — saving, under your account.
   This is the only thing that holds your login and writes to nourishible's database.
   Connecting it *is* the login: your agent pops your browser, you sign in and approve, and
   it's done — no separate CLI step, nothing to clone or run yourself. Read tools cover
@@ -37,7 +46,7 @@ from `raw.githubusercontent.com/mag-dot/nourishible-mcp/main/SKILL.md` without c
 Edit the one inside the skill directory; `scripts/build-skill.sh` fails the build if the
 two drift apart.
 
-The skill calls the MCP server's tools to save what it extracted — it doesn't (and can't)
+The workflow calls the hosted MCP server's tools to save what it extracted — it doesn't (and can't)
 write to the database on its own. You need both connected for a recipe to actually land in
 your library — but you don't have to set them up separately. Any agent can install both
 in one pass by following [`INSTALL.md`](./INSTALL.md), and for Claude Code the whole repo
@@ -46,25 +55,25 @@ is packaged as a single plugin ([`.claude-plugin/`](./.claude-plugin),
 
 ## Install
 
-Both pieces go in together — you never have to install the skill and connect the MCP
-server as two separate errands.
+Both MCP connections go in together for Claude Code. Other clients install the local
+package and register the hosted connection in the same setup pass.
 
 **Any agent — one step:** paste this into your agent (Claude Code, Claude Desktop, Cursor,
 Codex CLI, …) and it does the whole setup itself:
 
 ```
-Set up nourishible for me by reading and following
-https://raw.githubusercontent.com/mag-dot/nourishible-mcp/main/INSTALL.md
+Set up nourishible for me by reading and following https://mcp.nourishible.com/
 ```
 
 [`INSTALL.md`](./INSTALL.md) is written for the agent rather than for you: it tells it to
-install the skill *and* register the remote MCP server in the same pass, with the exact
+install the local MCP package *and* register the remote MCP server in the same pass, with the exact
 locations and commands for the common agents. Where a step needs a GUI it can't drive
 (Claude Desktop's connector settings, the claude.ai skill upload), it hands you that one
 piece to click instead of silently skipping it.
 
 **Claude Code — one command, if you'd rather not paste a prompt:** this repo is also a
-Claude Code plugin bundling the skill *and* the MCP connection.
+Claude Code plugin bundling local extraction, the compatibility skill, and the hosted MCP
+connection.
 
 ```
 /plugin marketplace add mag-dot/nourishible-mcp
@@ -77,6 +86,15 @@ later — that part can't be skipped, it's what ties the connection to *your* ac
 Everything else — extraction, structuring, saving — just works after that.
 
 Then paste a recipe video, note, or Instagram carousel link and ask your agent to save it.
+
+### Local MCP package
+
+For clients that support local stdio MCP but not Claude plugins, install this repository
+with Python 3.10+ and configure the client to launch `nourishible-mcp-local`. It exposes
+`recipe_setup_status`, `install_recipe_dependencies`, `extract_recipe_evidence`, and
+`instagram_capture_instructions`, plus the `nourishible://recipe-workflow` resource and
+the `recipe_nourishible` prompt. Add the hosted server URL from `INSTALL.md` alongside it
+for account access.
 
 ## License
 

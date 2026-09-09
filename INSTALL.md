@@ -3,21 +3,21 @@
 **This file is written for an AI agent, not a person.** If you are a user, you don't need
 to read it — paste this into your agent instead, and it will do the whole setup:
 
-> Set up nourishible for me by reading and following
-> https://raw.githubusercontent.com/mag-dot/nourishible-mcp/main/INSTALL.md
+> Set up nourishible for me by reading and following https://mcp.nourishible.com/
 
 ---
 
 ## Agent: read this part
 
-You are setting up nourishible for the user. There are **two pieces, and both are
-required** — a recipe can't be saved with only one of them:
+You are setting up nourishible for the user. There are **two MCP connections, and both
+are required** — a recipe can't be saved with only one of them:
 
-1. **The remote MCP server** `https://backend-api-production-c967.up.railway.app/mcp` —
+1. **The remote MCP server** `https://mcp.nourishible.com/mcp` —
    saving, under the user's own nourishible account. Connecting it *is* the login.
-2. **The `recipe-nourishible` skill** — extraction. It watches the video (or reads the
-   slides of an Instagram carousel) and writes the structured recipe, then calls the MCP
-   server's tools to save it.
+2. **The local `nourishible-mcp-local` server** — extraction plus the recipe workflow. It
+   watches the video (or reads Instagram carousel slides), returns evidence for the agent
+   to structure, then the agent calls the hosted tools to save it. The standalone skill is
+   retained as a compatibility fallback for clients without local MCP support.
 
 Do both in this one pass. Don't stop after the first, and don't ask the user to come back
 for a second round.
@@ -37,7 +37,7 @@ for a second round.
 ## Claude Code: one command does both
 
 If you are Claude Code, skip the two steps below entirely — this repo is packaged as a
-plugin that bundles the skill *and* the MCP registration:
+plugin that bundles the local extraction MCP, compatibility skill, and hosted MCP registration:
 
 ```
 /plugin marketplace add mag-dot/nourishible-mcp
@@ -52,14 +52,14 @@ and ask the user to run them, then continue to "Step 3 — verify and report".
 URL, used verbatim everywhere below:
 
 ```
-https://backend-api-production-c967.up.railway.app/mcp
+https://mcp.nourishible.com/mcp
 ```
 
 Transport is streamable HTTP. Pick the row that matches the agent you're running as:
 
 | Agent | What to do |
 | --- | --- |
-| Claude Code (not using the plugin) | `claude mcp add --transport http --scope user nourishible https://backend-api-production-c967.up.railway.app/mcp` |
+| Claude Code (not using the plugin) | `claude mcp add --transport http --scope user nourishible https://mcp.nourishible.com/mcp` |
 | Cursor | Merge the JSON block below into `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (this project) |
 | Windsurf, Cline, and other JSON-configured clients | Same JSON block, in that client's MCP config file |
 | Gemini CLI | Merge the JSON block into the `mcpServers` object in `~/.gemini/settings.json` |
@@ -74,7 +74,7 @@ JSON entry, for any client configured by file:
   "mcpServers": {
     "nourishible": {
       "type": "http",
-      "url": "https://backend-api-production-c967.up.railway.app/mcp"
+      "url": "https://mcp.nourishible.com/mcp"
     }
   }
 }
@@ -85,50 +85,36 @@ other server already in it. Create the file with just this content if it doesn't
 
 Most clients only pick up a config change on restart. Say so plainly if that applies.
 
-## Step 2 — install the skill
+## Step 2 — install the local MCP server
 
-The skill lives in this repo at `skills/recipe-nourishible/`. Copy that directory —
-`SKILL.md` plus its `scripts/` — into wherever the agent you're running as loads skills
-from:
-
-| Agent | Skill directory |
-| --- | --- |
-| Claude Code | `~/.claude/skills/recipe-nourishible/` (all projects) or `.claude/skills/recipe-nourishible/` (this project only) |
-| Claude Desktop / claude.ai | Not a directory — it's a UI upload. See "Claude Desktop" below |
-| Cursor, Windsurf, and other agents with a skills or rules directory | That agent's equivalent directory, one folder per skill |
-| An agent with no skill concept | Leave the repo checked out somewhere stable and tell the user to point you at `SKILL.md` when they want a recipe |
-
-The skill's full instructions are also published at
-`https://raw.githubusercontent.com/mag-dot/nourishible-mcp/main/SKILL.md` — a byte-identical
-copy of `skills/recipe-nourishible/SKILL.md`. An agent that can fetch a URL but can't clone
-or write files can read the recipe workflow straight from there. It won't have the bundled
-`scripts/`, so the download/frames/transcript steps still need a real install.
-
-A shell-capable agent can do the whole thing like this (adjust the destination to the row
-above):
+Install the package with Python 3.10 or newer:
 
 ```bash
-tmp="$(mktemp -d)"
-git clone --depth 1 https://github.com/mag-dot/nourishible-mcp "$tmp/nourishible-mcp"
-mkdir -p ~/.claude/skills
-rm -rf ~/.claude/skills/recipe-nourishible
-cp -R "$tmp/nourishible-mcp/skills/recipe-nourishible" ~/.claude/skills/recipe-nourishible
-rm -rf "$tmp"
+python3 -m pip install "git+https://github.com/mag-dot/nourishible-mcp.git"
 ```
 
-`rm -rf` on the destination replaces any older copy of this same skill. Check what's
-there first, and if the directory exists but isn't a previous install of this skill, stop
-and ask instead of deleting it.
+Then register a local stdio MCP server named `nourishible-local` whose command is
+`nourishible-mcp-local`. Use the client's normal local-MCP configuration flow. For JSON
+clients the entry is:
 
-**Claude Desktop / claude.ai:** skills are uploaded as a `.skill` bundle through the UI,
-which you can't drive. Build the bundle from a clean checkout —
-
-```bash
-bash skills/recipe-nourishible/scripts/build-skill.sh
+```json
+{
+  "mcpServers": {
+    "nourishible-local": {
+      "command": "nourishible-mcp-local",
+      "args": []
+    }
+  }
+}
 ```
 
-— and tell the user to upload the resulting `dist/recipe-nourishible.skill` in the skills
-UI. (The build refuses to run on a dirty working tree; that's intentional.)
+Use the absolute path returned by `command -v nourishible-mcp-local` if the client starts
+with a restricted `PATH`. The installed wheel contains `SKILL.md`, every reference, and
+all extraction/capture scripts. The server publishes the workflow at
+`nourishible://recipe-workflow`, so there is no separate skill-copy or upload step.
+
+Clients without local stdio MCP support may still install the compatibility skill from
+`skills/recipe-nourishible/` using their normal skill mechanism.
 
 **macOS-only note, worth passing on:** Instagram extraction goes through a local screen
 capture pipeline that only runs on macOS — this covers both Reels and multi-image
@@ -137,8 +123,9 @@ dependencies on first use — don't pre-install anything here.
 
 ## Step 3 — verify and report
 
-1. **Skill:** confirm `SKILL.md` and `scripts/` landed in the destination directory.
-2. **MCP:** after whatever restart the client needs, `save_recipe`, `update_recipe`,
+1. **Local MCP:** confirm `recipe_setup_status`, `extract_recipe_evidence`,
+   `instagram_capture_instructions`, and the `nourishible://recipe-workflow` resource are visible.
+2. **Hosted MCP:** after whatever restart the client needs, `save_recipe`, `update_recipe`,
    `set_recipe_thumbnail`, `list_my_recipes`, `get_my_recipe`, `search_recipes`, and
    `get_recipe` should be visible as callable tools.
 3. **Sign-in: trigger it now, don't defer it.** Call `list_my_recipes` (harmless, read-only,

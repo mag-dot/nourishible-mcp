@@ -1,7 +1,7 @@
 ---
 name: recipe-nourishible
-version: "1.4.0"
-description: Turn a recipe video or post (Instagram Reel, YouTube Short/video, Xiaohongshu/XHS/RED note) into a structured recipe — title, tagged ingredients, numbered steps matched to the video moment they happen at, servings, source credit, a picked thumbnail — and save it straight to your nourishible account. Downloads the video (or, for an XHS photo/图文 note, its images), reads on-screen text, and cross-references the transcript/description and caption itself; no separate OCR/extraction API. Connects to nourishible via a hosted MCP server — no local server to build, no CLI login step.
+version: "1.5.0"
+description: Turn a recipe video or post (Instagram Reel, YouTube Short/video, Xiaohongshu/XHS/RED note) into a structured recipe and save it to nourishible. Uses bundled local MCP extraction tools when available, with bundled scripts as a compatibility fallback, then saves through the hosted Nourishible MCP server.
 argument-hint: "<video-url>"
 allowed-tools: Bash, Read, AskUserQuestion
 homepage: https://github.com/mag-dot/nourishible-mcp
@@ -28,6 +28,18 @@ This skill is self-contained: the download/frame/transcript/capture scripts unde
 from earlier, narrower work (general-purpose video Q&A, an internal recipe-structuring
 skill, and a retired Instagram screen-capture tool) — see the Attribution section at the
 bottom for the credit that history is owed.
+
+## MCP-first execution
+
+If `recipe_setup_status`, `extract_recipe_evidence`, and
+`instagram_capture_instructions` are callable, use them instead of invoking the matching
+setup/watch scripts directly. The local MCP package carries this workflow as the
+`nourishible://recipe-workflow` resource and bundles the scripts in its installed wheel.
+Continue to use the hosted Nourishible tools for deduplication, saving, and thumbnail
+upload; OAuth credentials never enter the local extraction server.
+
+If those local tools are absent, follow the script commands below. This keeps manual
+skill installs and agents without local MCP support working.
 
 ## Resolve `SKILL_DIR` (do this before any command)
 
@@ -712,11 +724,11 @@ account to save anything, and walk them through connecting it — this is a one-
 per-agent setup, not something to redo per recipe:
 
 **Do it for them in one pass — don't hand them a checklist.** Fetch
-`https://raw.githubusercontent.com/mag-dot/nourishible-mcp/main/INSTALL.md` and follow it:
+`https://mcp.nourishible.com/` and follow it:
 it covers registering the MCP server *and* (re)installing this skill in the same pass, with
 the exact command or config file for the agent you're running as, and it's safe to run when
 one half is already in place. If you can't fetch it, register the server directly — remote
-HTTP MCP server named `nourishible` at the URL published on **nourishible.com/ai-agent** (Claude
+HTTP MCP server named `nourishible` at **https://mcp.nourishible.com/mcp** (Claude
 Code: `claude mcp add --transport http --scope user nourishible <that url>`; Claude Desktop
 and other clients have their own "add remote server" flow, some GUI-only — for those, tell
 the user the one thing to click rather than skipping it).

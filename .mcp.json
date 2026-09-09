@@ -2,7 +2,11 @@
   "mcpServers": {
     "nourishible": {
       "type": "http",
-      "url": "https://backend-api-production-c967.up.railway.app/mcp"
+      "url": "https://mcp.nourishible.com/mcp"
+    },
+    "nourishible-local": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/bin/run-local-mcp",
+      "args": ["${CLAUDE_PLUGIN_ROOT}", "${CLAUDE_PLUGIN_DATA}"]
     }
   }
 }
