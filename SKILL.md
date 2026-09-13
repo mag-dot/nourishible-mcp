@@ -187,9 +187,9 @@ Not for: general video Q&A unrelated to recipes, blog/website recipe scraping (o
 scope — no download step applies), TikTok (not supported by the bundled download script).
 
 **Route by platform in Step 1.** YouTube and Xiaohongshu work everywhere this skill runs
-and go through `watch.py`. Instagram has no fetch path at all and needs one of two
-screen-based routes — read `references/instagram.md` when you get there, and don't rule
-Instagram out based on the OS your own shell reports.
+and go through `watch.py`. Instagram never goes through `watch.py`: it is read from a
+rendered page, by one of three routes — read `references/instagram.md` when you get there,
+and don't rule Instagram out based on the OS your own shell reports.
 
 ## Step 0.5 — dedup check (do this before spending any download/frame budget)
 
@@ -358,29 +358,35 @@ action is often only correct/visible at one specific frame, not "somewhere in th
 
 ### Instagram
 
-**No fetch path — content comes off a screen.** `yt-dlp` returns HTTP 400 on Instagram
-even with a valid logged-in session; cookie auth is not a fallback, so don't try it.
-There are two working routes, one needing macOS and one needing only browser tools:
+**Never `yt-dlp`, never `watch.py`.** It returns HTTP 400 on Instagram even with a valid
+logged-in session, and the acquisition contract forbids it anyway; cookie auth is not a
+fallback. Content is read from a rendered page, by one of three routes:
 
+- **Signed-out agent browser** — you open the one post in a browser you control that is
+  confirmed signed out of Instagram (on a local Claude desktop session: the built-in
+  Browser pane). Caption from `og:description`, native-resolution frames drawn from the
+  `<video>` element. Needs nothing from the user and is usually the fastest; **no audio
+  transcript**. Try this first when such a browser exists.
 - **Local screen capture** — higher fidelity (sampled frames, on-device Vision OCR, a
-  Whisper transcript). Needs macOS, Screen Recording permission, and Chrome on the same
-  machine the scripts run on.
-- **Agent-controlled browser** — works from any platform, including a remote Linux
-  container, provided you can drive a Chrome the user is sitting in front of. Yields
-  caption text and video frames; **no audio transcript**.
+  Whisper transcript). Needs macOS, Screen Recording permission for the shell running the
+  scripts, and Chrome on the same machine.
+- **Agent-controlled browser** — the user's own Chrome, usually signed in: the user opens
+  and plays, you only record. Works from any platform, including a remote Linux container
+  driving a macOS Chrome through a browser extension. **No audio transcript**.
 
-Don't conclude "Instagram is macOS-only" because *your own* shell reports Linux — an
-agent on Linux can drive a macOS Chrome through a browser extension, and that is the
-common remote case.
+Don't conclude "Instagram is macOS-only" because *your own* shell reports Linux.
 
-**Read `${SKILL_DIR}/references/instagram.md` before running either one.** It carries
-the preflight commands, the capture procedure, the carousel path (a `/p/` post whose
-recipe is written on the slides, sometimes several recipes in one post), the
-acquisition rule that governs all of it, and the per-path failure modes.
+**Read `${SKILL_DIR}/references/instagram.md` before running any of them.** It carries the
+step-by-step procedure for each route (including how to get the thumbnail frame onto disk
+from the signed-out browser), the dead ends to skip on a local desktop session, the
+carousel path (a `/p/` post whose recipe is written on the slides), the acquisition rule,
+and the per-path failure modes.
 
-**The acquisition rule, in short, because it is not negotiable:** the user opens and
-plays the post; you only record what is already on their screen. Never navigate to an
-instagram.com URL yourself, never click play, never walk a list of posts. See
+**The acquisition rule, in short, because it is not negotiable:** in a **signed-out**
+browser you may open only the one post the user asked for, at most twice, and never click
+Meta's popups closed or download the video. In a **signed-in** browser the user opens and
+plays the post and you only record what is on their screen — never navigate there. Never
+walk a list of posts in either. See
 [`docs/capture/CONTRACT.md`](../../docs/capture/CONTRACT.md).
 
 ### Xiaohongshu (XHS/RED/小红书)
@@ -724,7 +730,7 @@ account to save anything, and walk them through connecting it — this is a one-
 per-agent setup, not something to redo per recipe:
 
 **Do it for them in one pass — don't hand them a checklist.** Fetch
-`https://raw.githubusercontent.com/mag-dot/nourishible-mcp/main/INSTALL.md` and follow it:
+`https://mcp.nourishible.com/` and follow it:
 it covers registering the MCP server *and* (re)installing this skill in the same pass, with
 the exact command or config file for the agent you're running as, and it's safe to run when
 one half is already in place. If you can't fetch it, register the server directly — remote
@@ -892,13 +898,15 @@ re-extract or adjust, leave it.
     missed the reel (wrong window/display). Tell the user plainly rather than guessing at
     a recipe from frames with no readable text.
 - **Instagram, but you can't run the capture scripts** (remote agent, non-Darwin shell,
-  scripts not on the machine with Chrome) — this is **not** a dead end. Check for browser
-  tools and use the agent-controlled browser route (`references/instagram.md`). Only report Instagram
-  as unavailable when that path is missing too, and say which piece is missing rather than
+  no Screen Recording permission for your shell, scripts not on the machine with Chrome) —
+  this is **not** a dead end. Use a signed-out browser you control if you have one, else
+  the agent-controlled browser route (`references/instagram.md`). Only report Instagram as
+  unavailable when those are missing too, and say which piece is missing rather than
   "Instagram is macOS-only".
-- **Agent-controlled browser path fails (Instagram)** — see that section's own failure
-  modes in Step 1. The two that matter most: never navigate to the post yourself to "fix"
-  a missing tab, and never retry a login wall — ask the user in both cases.
+- **Browser path fails (Instagram)** — see the route's own failure modes in
+  `references/instagram.md`. The ones that matter most: never navigate a **signed-in**
+  browser to the post to "fix" a missing tab, never reload to retry a login wall, and in
+  the signed-out browser never navigate the tab away before the thumbnail file is saved.
 - **Thumbnail upload failed** — if `create_thumbnail_upload` isn't available or the PUT
   can't run, fall back to `set_recipe_thumbnail` with base64 at 512×384/quality 75 and
   verify the stored image (Step 6.5, item 4). A `thumbnail_too_small` rejection means the
