@@ -730,7 +730,7 @@ account to save anything, and walk them through connecting it — this is a one-
 per-agent setup, not something to redo per recipe:
 
 **Do it for them in one pass — don't hand them a checklist.** Fetch
-`https://raw.githubusercontent.com/mag-dot/nourishible-mcp/main/INSTALL.md` and follow it:
+`https://mcp.nourishible.com/` and follow it:
 it covers registering the MCP server *and* (re)installing this skill in the same pass, with
 the exact command or config file for the agent you're running as, and it's safe to run when
 one half is already in place. If you can't fetch it, register the server directly — remote
