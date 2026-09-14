@@ -5,19 +5,145 @@ routes here. Nothing in this file applies to YouTube or Xiaohongshu.
 
 Instagram has no fetch path: `yt-dlp`'s extractor returns HTTP 400 even with a valid
 logged-in session (verified 15 Aug 2026, stable/nightly/TLS-impersonated). Don't try
-cookie auth and don't retry it — content comes off a screen, by one of the two routes
+cookie auth and don't retry it — content comes off a rendered page, by one of the routes
 below. Choose by what's actually reachable, not by the OS your shell reports:
 
-1. Can you run `scripts/capture/capture-only.sh` on a Darwin machine? Use local capture.
-2. Otherwise, do you have browser tools pointed at a Chrome the user can see? Use the
-   agent-controlled browser path.
-3. Only if neither is true, say plainly that Instagram can't be extracted from where
+1. **Do you have a browser of your own that is signed out of Instagram** (a built-in
+   preview/browser pane, a fresh automation profile)? Use the signed-out agent browser
+   path — it needs nothing from the user, and it is usually the fastest.
+2. Can you run `scripts/capture/capture-only.sh` on a Darwin machine? Use local capture.
+3. Otherwise, do you have browser tools pointed at a Chrome the user can see? Use the
+   agent-controlled browser path (the user opens and plays; you record).
+4. Only if none is true, say plainly that Instagram can't be extracted from where
    you're running. An agent on Linux can still drive a macOS Chrome through a browser
    extension — check for browser tools before concluding "Instagram is macOS-only".
 
+**Which browser matters more than which tool.** The user's everyday Chrome is almost
+always signed in to Instagram, and a signed-in browser is never yours to navigate. Route 1
+applies only to a browser you have confirmed is signed out.
+
+## Signed-out agent browser (any platform)
+
+Use this when you control a browser that holds **no Instagram session**. On a local Claude
+desktop session that is the built-in Browser pane (`mcp__Claude_Browser__*`). You open the
+post, read the caption, and draw frames from the playing `<video>` element. There is no
+screen recording, no OCR binary and no audio.
+
+**The rule for this path** (13 Sep 2026 amendment in
+[`docs/capture/CONTRACT.md`](../../../docs/capture/CONTRACT.md)):
+
+- **One post: the one the user asked for.** No second post without a new request, no
+  profile grids, feeds, saved collections or lists.
+- **Signed out, confirmed** (step 2). If the browser turns out to be signed in, stop and
+  use the agent-controlled browser path, where the user opens and plays.
+- **At most two page loads.** The second is only for recovering work lost from the first,
+  never for retrying a login wall or refusal.
+- **Don't click Meta's popups closed.** Ask the user to close one if it blocks you.
+- **Don't download media.** No fetching CDN URLs from the DOM, no saving the video file.
+
+#### Procedure
+
+1. **Open the post** with the browser tool's `navigate`, using the user's URL without
+   tracking parameters (`?igsh=`, `?is=`). Wait ~4s.
+2. **Confirm signed out and read the caption** in one script call:
+
+   ```javascript
+   ({
+     signedOut: /Log in/.test(document.body.innerText.slice(0, 3000)),
+     caption: document.querySelector('meta[property="og:description"]')?.content,
+     video: (() => { const v = document.querySelector('video');
+       return v && { w: v.videoWidth, h: v.videoHeight, dur: v.duration }; })(),
+   })
+   ```
+
+   `og:description` has the shape `<likes>, <comments> - <handle> on <date>: "<caption>"`.
+   The text before ` on ` is `creatorHandle`; the quoted part is the caption, with the same
+   authority as the local path's `caption.txt`. Many posts carry the full recipe there, in
+   which case frames are only needed for step timing and the thumbnail.
+3. **If `video` is null**, a sign-up popup is holding back the player. Ask the user to close
+   it in the browser pane, then repeat step 2. No video at all means a photo or carousel
+   post: see Carousels below.
+4. **Capture frames from the video at native resolution**, one per second over a single
+   play-through, keeping the canvases in the page:
+
+   ```javascript
+   const v = document.querySelector('video'); window.__frames = []; let last = -1;
+   const grab = () => { if (v.currentTime - last < 1 && v.currentTime > last) return; last = v.currentTime;
+     const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight;
+     c.getContext('2d').drawImage(v, 0, 0); window.__frames.push({ t: v.currentTime, c }); };
+   v.addEventListener('timeupdate', grab); v.muted = true; v.currentTime = 0; await v.play();
+   await new Promise(r => v.addEventListener('ended', r, { once: true }));
+   v.removeEventListener('timeupdate', grab);
+   window.__frames.map(f => +f.t.toFixed(1))
+   ```
+
+   This gives the real `videoWidth × videoHeight` (1440×2560 on a recent reel), much sharper
+   than screenshots. If `drawImage` throws a security error, use screenshots of the video
+   region instead (see the rotation technique in the agent-controlled section).
+5. **Review all frames in one screenshot.** Tile ~160px-wide copies, each labelled with its
+   index and timestamp, into one canvas; show it as a full-screen overlay `<img>`; take one
+   screenshot; remove the overlay. Use it to time steps and make the Step 5.5 thumbnail pick.
+6. **Save the thumbnail frame to disk. Do not navigate this tab until the file exists** —
+   the frames live only in the page's memory, and in the Browser pane even `window.open`
+   replaces the current tab. Uploading from the page, download links and clipboard writes
+   did not work here; this does:
+
+   Return the picked frame from a script call as a 540×960 JPEG (≥512px wide for Step 5.5),
+   between markers:
+
+   ```javascript
+   const c = document.createElement('canvas'); c.width = 540; c.height = 960;
+   c.getContext('2d').drawImage(window.__frames[PICK].c, 0, 0, 540, 960);
+   'B64START' + c.toDataURL('image/jpeg', 0.82).split(',')[1] + 'B64END'
+   ```
+
+   The result is larger than the tool-output limit, so the harness writes it to a file and
+   gives you the path instead of the content. Decode from that file; never read or retype
+   the base64:
+
+   ```bash
+   python3 - "$SAVED_RESULT_FILE" "$OUT_DIR/thumb.jpg" <<'EOF'
+   import base64, json, re, sys
+   raw = open(sys.argv[1]).read()
+   try: raw = "".join(x.get("text", "") for x in json.loads(raw))
+   except ValueError: pass
+   open(sys.argv[2], "wb").write(base64.b64decode(re.search(r"B64START([A-Za-z0-9+/=]+)B64END", raw).group(1)))
+   EOF
+   ```
+
+   **Fallback** if the result is not saved to a file (a harness without that behaviour):
+   pause the video on the picked frame (`v.currentTime = t`), and ask the user to take a
+   screenshot of the video area and give you the file path.
+7. **Save.** `sourcePlatform: "instagram"`, `creatorHandle` from step 2, steps in your own
+   words. `save_recipe` requires thumbnail bytes before you have an `id`: pass a tiny
+   downscale of the picked frame (a 32px-wide JPEG returned from the page is ~1KB), then
+   replace it with the real file through `create_thumbnail_upload` and `curl` (Step 6.5).
+   The response will warn the placeholder is under 512px; that is expected until the
+   upload lands. Delete the JPEG and the saved result file afterwards.
+
+#### Dead ends on a local desktop session — skip these
+
+| Tried | Why it fails |
+|---|---|
+| `yt-dlp` / `watch.py` on the Instagram URL | Forbidden by the contract (and returns HTTP 400) |
+| `screencapture` or `ffmpeg -f avfoundation` from the shell | The shell has no Screen Recording permission, even when computer-use does; ffmpeg hangs |
+| computer-use `request_access` for a browser | Loops on a confirmation message and never shows the approval dialog |
+| Scripting a QuickTime screen recording | `new screen recording` only opens the toolbar; nothing can press Record |
+| Claude in Chrome (`mcp__claude-in-chrome__*`) | Sees only tabs in its own tab group, and it is the user's signed-in Chrome, so never navigate there |
+
+#### Failure modes
+
+- **Page shows an account, not "Log in"**: signed in. Stop; use the agent-controlled path.
+- **Login wall or empty page instead of the post**: refused. Don't reload to retry. Offer
+  the other routes: share the link to the Nourishible app, or the user opens it for the
+  agent-controlled path.
+- **Frames lost before the thumbnail was saved**: this is what the second load is for.
+  Re-open, seek to the picked timestamp, redraw that one frame, save it first.
+- **No transcript**: expected on this path. Say so in the Step 5 notes.
+
 ## Local screen capture (macOS)
 
-**This is one of two Instagram paths.** It requires macOS (Screen Recording is a
+**This is one of the Instagram paths.** It requires macOS (Screen Recording is a
 macOS-only mechanism) *on the machine running these scripts*. If that isn't where you are
 — a remote agent, a Linux/Windows user, a container — skip to
 `### Instagram — agent-controlled browser` below rather than concluding Instagram is
@@ -95,13 +221,16 @@ on. It needs browser-automation tools wired to a Chrome the **user** is looking 
 screenshots, page reads, and script evaluation). It needs no Screen Recording permission,
 no `swiftc`, no Whisper, and no local `ffmpeg` — everything comes through the browser.
 
-**The acquisition rule is identical, and it is not negotiable.** Read
+**The acquisition rule here is stricter than the signed-out path's, and it is not
+negotiable.** This is the user's own browser, and it is usually signed in to Instagram. Read
 [`docs/capture/CONTRACT.md`](../../../docs/capture/CONTRACT.md) before touching this path. In
 short:
 
 - **The user navigates to the post and presses play. You never do.** Do not call a
-  `navigate` tool with an instagram.com URL. Do not click the play button. Do not open a
-  post from a list, a saved collection, or a profile grid. Ask, then wait.
+  `navigate` tool with an instagram.com URL in this browser. Do not click the play button. Do not open a
+  post from a list, a saved collection, or a profile grid. Ask, then wait. (If you have a
+  separate browser that is confirmed signed out, the signed-out agent browser path above
+  lets you open the post there instead.)
 - Once the human has played it, reading that rendered page and screenshotting it is the
   same permitted act as recording their screen — you are the recorder, not the requester.
 - **Never batch.** One post, because the user asked for that post. Walking several posts

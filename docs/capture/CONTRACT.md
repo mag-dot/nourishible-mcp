@@ -137,12 +137,30 @@ Two consequences worth stating plainly, because they look like harmless convenie
    watched is reading memory. Seeking a video nobody played can trigger range requests to
    Meta's CDN that the agent caused — so require a full playthrough first.
 
+### Amended 13 Sep 2026: a signed-out browser the agent controls
+
+The arrangement above governs a browser that is (or may be) **signed in** to Instagram —
+normally the user's own. For a browser the agent controls that is **confirmed signed out**,
+the owner has decided a narrower exception:
+
+- The agent may open **only the one post the user asked it to extract**, and may start
+  and seek that post's video.
+- **At most two page loads**, the second only to recover work lost from the first — never
+  to retry a login wall or refusal.
+- No signing in, no clicking Meta's popups closed by script, no downloading the video or
+  reading CDN URLs to fetch them, no second post without a new request, no lists.
+
+This is still automated access under Meta's terms; it was accepted knowingly because no
+account is at stake and each load is bounded by one user request. The procedure is in
+`skills/recipe-nourishible/references/instagram.md` ("Signed-out agent browser").
+
 ## What this means for a consumer of the engine
 
 If you build on this engine (nourishible.com or anything else):
 
 1. **Do not add an Instagram fetch path.** Not on your server, not in a worker, not "just for
-   testing", and not by handing an agent a browser and letting it navigate. The engine deliberately has no such capability; adding one transfers the account
+   testing", and not by handing an agent a browser and letting it navigate (beyond the
+   signed-out, one-requested-post exception above). The engine deliberately has no such capability; adding one transfers the account
    risk to whoever's credentials are used.
 2. **Instagram jobs are asynchronous by nature.** A submitted Instagram URL enters
    `needs-capture` and stays there until a human plays it. Your UI must be able to show
