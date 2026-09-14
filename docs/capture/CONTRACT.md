@@ -153,6 +153,14 @@ If you build on this engine (nourishible.com or anything else):
 
 ---
 
+## Amendment — 13 Sep 2026
+
+**Dismissing Meta's UI.** If Meta shows a sign-up prompt, the agent should press its close
+control and dismiss the prompt without asking the user for help. Closing that UI does not
+initiate a request to Meta's servers and is permitted under this contract.
+
+---
+
 ## If this ever needs to change
 
 The only compliant route to automated Instagram access is **prior written permission from
