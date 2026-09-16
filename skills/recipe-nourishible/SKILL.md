@@ -1,6 +1,6 @@
 ---
 name: recipe-nourishible
-version: "1.5.0"
+version: "1.5.1"
 description: Turn a recipe video or post (Instagram Reel, YouTube Short/video, Xiaohongshu/XHS/RED note) into a structured recipe and save it to nourishible. Uses bundled local MCP extraction tools when available, with bundled scripts as a compatibility fallback, then saves through the hosted Nourishible MCP server.
 argument-hint: "<video-url>"
 allowed-tools: Bash, Read, AskUserQuestion
@@ -762,11 +762,17 @@ having called only `save_recipe`/`update_recipe` — a thumbnail-less "success" 
 still owe the other half of.
 
 1. **Re-run the Step 0.5 dedup check** immediately before saving (see that section).
-2. **New recipe:** call `save_recipe` with the exact JSON from Step 3 (including the
-   `timestampSeconds` values from Step 3.5). **Re-extract of an existing one** (Step 0.5
-   found a match and the user confirmed): call `update_recipe` with that recipe's `id` and
-   only the fields that changed — omitted fields are left untouched, so don't resend the
-   whole object out of habit.
+2. **New recipe:** inspect the live `save_recipe` description before calling it. Some
+   hosted deployments require a video recipe's picked thumbnail in the **initial** save
+   (the recipe has no id yet, so `create_thumbnail_upload` cannot be used first). When the
+   tool reports that requirement, encode the #1 frame as `thumbnailImageBase64` and include
+   it in this `save_recipe` call; use the 512×384 / quality-75 fallback preparation below,
+   then verify the returned `thumbnailUrl`. Otherwise call `save_recipe` with the exact
+   JSON from Step 3 (including the `timestampSeconds` values from Step 3.5) and use the
+   direct-upload path in the next step. **Re-extract of an existing one** (Step 0.5 found a
+   match and the user confirmed): call `update_recipe` with that recipe's `id` and only the
+   fields that changed — omitted fields are left untouched, so don't resend the whole object
+   out of habit.
 3. **If `save_recipe`'s response has `duplicate: true` instead of a saved recipe:**
    nourishible found an existing recipe for this video server-side that Step 0.5 missed
    (a race with another save on this account is the normal cause) and created nothing.
@@ -775,8 +781,9 @@ still owe the other half of.
    handles a match: tell the user it's already saved and ask whether they want to
    re-extract, then `update_recipe` on that id if they do (still finishing with the
    thumbnail step below if you do). Skip the rest of this list for this attempt otherwise.
-4. **Thumbnail — required, immediately, same turn. Upload it directly; don't base64 it.**
-   Call `create_thumbnail_upload` with the saved/updated recipe's `id`. It returns a
+4. **Thumbnail — required, immediately, same turn.** If the initial-save contract above
+   already stored the thumbnail, verify its `thumbnailUrl` and continue. Otherwise upload
+   it directly: call `create_thumbnail_upload` with the saved/updated recipe's `id`. It returns a
    short-lived, single-use `uploadUrl` and a ready-to-run `command`. PUT the raw bytes:
 
    ```bash
