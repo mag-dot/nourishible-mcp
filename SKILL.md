@@ -1,6 +1,6 @@
 ---
 name: recipe-nourishible
-version: "1.5.0"
+version: "1.5.1"
 description: Turn a recipe video or post (Instagram Reel, YouTube Short/video, Xiaohongshu/XHS/RED note) into a structured recipe and save it to nourishible. Uses bundled local MCP extraction tools when available, with bundled scripts as a compatibility fallback, then saves through the hosted Nourishible MCP server.
 argument-hint: "<video-url>"
 allowed-tools: Bash, Read, AskUserQuestion
@@ -446,14 +446,14 @@ Produce a recipe JSON matching this schema exactly:
 {
   "title": "string",
   "sourceUrl": "string (the resolved canonical URL — see Step 1's Xiaohongshu note on short links)",
-  "sourcePlatform": "instagram | youtube | xiaohongshu",
+  "sourcePlatform": "instagram | youtube | manual (use manual for Xiaohongshu — the server has no xiaohongshu value and refuses one; sourceUrl still carries the XHS link)",
   "creatorHandle": "string",
   "thumbnailFramePath": "path to the full-resolution `thumb_*.jpg` re-grab of your #1 pick (Step 5.5 — rank on the frames you already extracted, then re-grab that timestamp; not a new download)",
   "servings": "integer, best estimate if unstated (say so in confidence notes)",
   "totalTimeMinutes": "integer or null",
   "ingredients": [
     {
-      "rawText": "the original line as seen/heard, verbatim",
+      "rawText": "the source line rendered in English — its wording and amounts, translated if the source isn't English (never the original script, never both)",
       "quantity": "number or null (null for 'to taste')",
       "unit": "string or null, normalized (tbsp, tsp, g, cup, ml, oz, clove, pinch, ...)",
       "name": "string",
@@ -464,8 +464,8 @@ Produce a recipe JSON matching this schema exactly:
   "steps": [
     { "text": "string, one clear instruction per step", "timestampSeconds": "number or null — see Step 3.5" }
   ],
-  "tags": ["cuisine/meal-type/dietary tags you can confidently infer — don't force it"],
-  "notes": "string or null — anything worth flagging that doesn't fit elsewhere",
+  "tags": ["lowercase: one course tag + the cuisine when clear, then main ingredient/dietary — see the tags rule below"],
+  "notes": "string or null — the recipe's public description, written for a cook (see the notes rule below); never about how you extracted it",
   "confidence": {
     "<field path, e.g. 'ingredients[2].quantity'>": "high | medium | low"
   }
@@ -474,6 +474,30 @@ Produce a recipe JSON matching this schema exactly:
 
 Structuring rules:
 
+- **English, every field, whatever the video's language.** The saved recipe is the
+  English source every other language is translated from (ja, ko, zh-TW, id, tl come
+  later, from it). Title, ingredient `name` *and* `rawText`, steps, tags and notes are all
+  English. Translate a native-script dish or ingredient name rather than keeping it, and
+  don't append the original in brackets or after a slash: `"Tomato & Egg Stir-fry"`, not
+  `"Tomato & Egg Stir-fry (蕃茄炒蛋)"`; rawText `"2 pork chops"`, not
+  `"豬扒 2塊 / Pork chop 2pcs"`. Reading a Chinese/Japanese/Korean source is fine — only
+  what you *write* is English. `save_recipe`/`update_recipe` refuse non-Latin script in any
+  of these fields and name the ones to fix, so getting it right here saves a round trip.
+- **`notes` is the recipe's public description.** The page shows it, and it is the meta
+  description and the schema.org Recipe `description` Google reads. Write one or two
+  sentences a cook would want: a substitution the creator mentioned, a serving tip, what
+  to adjust. Never the extraction process — no "extracted from…", "no transcript",
+  "on-screen text confirmed", "unverified", confidence talk. Uncertainty goes in
+  `confidence`; process goes in your reply to the user (Step 5's list). `null` beats a
+  process note, and the server refuses one (it matches frames/transcript/caption/
+  unverified/confidence wording).
+- **Tags drive Google's recipeCategory/recipeCuisine.** Short lowercase tags. Always
+  include (1) the course — one of `breakfast`, `lunch`, `dinner`, `main course`,
+  `side dish`, `soup`, `salad`, `dessert`, `snack`, `appetizer`, `bread`, `sauce`,
+  `beverage`, or `baby food` for weaning recipes — and (2) the cuisine when the source
+  actually indicates one (`japanese`, `cantonese`, `taiwanese`, `korean`, `italian`,
+  `british`, `mediterranean`, `middle eastern`, …; never guess one). Then the main
+  ingredient and dietary tags (`vegetarian`, `gluten-free`).
 - **Reconcile, don't just concatenate.** When caption text, on-screen text, and spoken
   audio disagree on a quantity or ingredient, prefer on-screen text > caption text >
   spoken audio, in that order — but only when they actually disagree. Note the conflict in
@@ -482,7 +506,7 @@ Structuring rules:
   ingredient entries) so each is independently taggable/scalable.
 - **Normalize units** to a small controlled vocabulary (tbsp, tsp, cup, g, kg, ml, l, oz,
   lb, clove, pinch, can, bunch) rather than preserving every raw spelling — keep the
-  original in `rawText` regardless.
+  source's own wording (in English) in `rawText` regardless.
 - **Steps should be actions, not narration.** Compress "so what I'm gonna do now is just
   go ahead and add in about a cup of..." into "Add 1 cup of...". Keep the count of steps
   close to what a person would actually check off while cooking (typically 4-10 for a
@@ -762,11 +786,20 @@ having called only `save_recipe`/`update_recipe` — a thumbnail-less "success" 
 still owe the other half of.
 
 1. **Re-run the Step 0.5 dedup check** immediately before saving (see that section).
-2. **New recipe:** call `save_recipe` with the exact JSON from Step 3 (including the
-   `timestampSeconds` values from Step 3.5). **Re-extract of an existing one** (Step 0.5
-   found a match and the user confirmed): call `update_recipe` with that recipe's `id` and
-   only the fields that changed — omitted fields are left untouched, so don't resend the
-   whole object out of habit.
+2. **New recipe:** inspect the live `save_recipe` description before calling it. Some
+   hosted deployments require a video recipe's picked thumbnail in the **initial** save
+   (the recipe has no id yet, so `create_thumbnail_upload` cannot be used first). When the
+   tool reports that requirement, encode the #1 frame as `thumbnailImageBase64` and include
+   it in this `save_recipe` call; use the 512×384 / quality-75 fallback preparation below,
+   then verify the returned `thumbnailUrl`. Otherwise call `save_recipe` with the exact
+   JSON from Step 3 (including the `timestampSeconds` values from Step 3.5) and use the
+   direct-upload path in the next step. **Re-extract of an existing one** (Step 0.5 found a
+   match and the user confirmed): call `update_recipe` with that recipe's `id` and only the
+   fields that changed — omitted fields are left untouched, so don't resend the whole object
+   out of habit.
+   **If the call is refused for non-English text or a process note** (see Step 3's
+   English and notes rules), nothing was written: rewrite exactly the fields the error
+   names and call again. That's a correction, not a failure to report.
 3. **If `save_recipe`'s response has `duplicate: true` instead of a saved recipe:**
    nourishible found an existing recipe for this video server-side that Step 0.5 missed
    (a race with another save on this account is the normal cause) and created nothing.
@@ -775,8 +808,9 @@ still owe the other half of.
    handles a match: tell the user it's already saved and ask whether they want to
    re-extract, then `update_recipe` on that id if they do (still finishing with the
    thumbnail step below if you do). Skip the rest of this list for this attempt otherwise.
-4. **Thumbnail — required, immediately, same turn. Upload it directly; don't base64 it.**
-   Call `create_thumbnail_upload` with the saved/updated recipe's `id`. It returns a
+4. **Thumbnail — required, immediately, same turn.** If the initial-save contract above
+   already stored the thumbnail, verify its `thumbnailUrl` and continue. Otherwise upload
+   it directly: call `create_thumbnail_upload` with the saved/updated recipe's `id`. It returns a
    short-lived, single-use `uploadUrl` and a ready-to-run `command`. PUT the raw bytes:
 
    ```bash
@@ -828,9 +862,13 @@ still owe the other half of.
    24 Aug 2026), and nothing in the response reveals it. The upload path has no such
    failure mode — the bytes are stored exactly as sent.
 
-5. Read back each tool's response for the real `id`/`slug` (and, once thumbnailed, confirm
-   the thumbnail is set) that nourishible assigned, and use that — not anything you
-   invented — in your Step 6 summary to the user.
+5. Read back each tool's response for the real `id`/`slug` that nourishible assigned, and
+   use that — not anything you invented — in your summary to the user. Once the thumbnail
+   is in (inline on `save_recipe`, or after the upload), make sure the response you last
+   read reflects it — call `get_my_recipe` once if the thumbnail went by upload. That
+   response carries the current `reviewStatus` and, for admin accounts, `translation`
+   (see "Close with a save summary" below): a recipe usually publishes only once its
+   thumbnail lands.
 6. **If the response includes a `safety` field** (nourishible computes this server-side
    for recipes that read as baby/infant food — you don't need to do anything to trigger
    it), relay its `flags` plainly in your Step 6 summary: each flag's `message`, verbatim.
@@ -839,6 +877,50 @@ still owe the other half of.
    `safety` field as "this is safe for babies" — nourishible didn't check every possible
    hazard, only 14 specifically cited ones, and a recipe that doesn't read as baby food at
    all is never checked in the first place.
+
+### Close with a save summary
+
+**The last thing the user reads is one or two lines saying the save is done** — not the
+recipe dump, not a tool log. After the thumbnail is confirmed (and any `safety` flags
+relayed above), end with:
+
+```
+Saved "Tomato & Egg Stir-fry" to your nourishible library: https://nourishible.com/recipes/tomato-egg-stir-fry
+Translate it into all languages (日本語, 한국어, 繁體中文, Bahasa Indonesia, Tagalog)?
+```
+
+- Line 1 always: the saved title and `https://nourishible.com/recipes/<slug>` from the
+  response. If it saved with no thumbnail, or came back `duplicate: true`, say that
+  instead of "Saved" — never a success line for a save that didn't happen.
+- Line 2 only when the latest `save_recipe` / `get_my_recipe` response has
+  `translation.available: true`. That field is present only for admin accounts —
+  translation is admin-only — so with no `translation` field, stop after line 1 and don't
+  offer it. With `translation.available: false`, replace line 2 with its `reason` in a few
+  words (usually: it's waiting for review and can be translated once published).
+- When a carousel saved several recipes, one line 1 per recipe, and ask the translation
+  question once for all of them.
+
+**If the user says yes**, translate it yourself — nourishible's server runs no LLM for
+translation:
+
+1. `list_untranslated_recipes` with `{ recipeId, limit: 5 }`. Each task is one locale:
+   the English `source`, a `brief` (rules and any glossary names that must be used
+   exactly), and a `reason`.
+2. Translate each task's `source` following its `brief`: faithful, not improved (add,
+   drop or correct nothing); same number and order of ingredients and steps; numbers,
+   units, handles and URLs unchanged; safety wording carried across at the same strength,
+   and never add "safe" or an equivalent. Translate each locale from the English, never
+   from another translation. ja/ko/zh-TW carry no English words in ingredient names or
+   lines (short units like g/ml are fine).
+3. `save_recipe_translation` with `recipeId`, `locale`, `title`, `ingredients`
+   (`name` + `rawText`), `steps` (`text`), `tags`, `notes`. If it's refused, the error
+   names the problem: fix that and resend, at most twice per locale, then report it as
+   failed with the server's message.
+4. Close with one line: which locales saved, and which (if any) failed.
+
+This offer belongs to this skill running in the user's own agent. The hosted extraction
+pipeline (app share sheet, Instagram capture queue) never asks — it has no user in the
+loop.
 
 ## Step 7 — clean up
 
