@@ -1,0 +1,115 @@
+{
+  "title": "Steamed Egg Custard with Minced Pork Sauce",
+  "sourceUrl": "https://www.youtube.com/shorts/zluXwWYupAw",
+  "sourcePlatform": "youtube",
+  "creatorHandle": "happycooking-z4i",
+  "servings": null,
+  "totalTimeMinutes": null,
+  "ingredients": [
+    {
+      "name": "steamed egg custard",
+      "rawText": "Prepared steamed egg custard, in a shallow bowl",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "minced pork",
+      "rawText": "Minced pork",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "cooking oil",
+      "rawText": "Cooking oil, a little",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "sugar",
+      "rawText": "Sugar, a little",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "white pepper",
+      "rawText": "White pepper, a little",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "rice wine",
+      "rawText": "Rice wine",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "soy sauce",
+      "rawText": "Soy sauce, to taste",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "water",
+      "rawText": "Water, as needed for the sauce",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "cornstarch slurry",
+      "rawText": "Cornstarch slurry, to thicken",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "scallions",
+      "rawText": "Chopped scallions, for garnish",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    }
+  ],
+  "steps": [
+    {
+      "text": "Heat a little oil in a pan. Add minced pork and break it up while frying until cooked through.",
+      "timestampSeconds": 3
+    },
+    {
+      "text": "Add a little sugar and white pepper, then rice wine and soy sauce. Stir-fry to combine.",
+      "timestampSeconds": 6
+    },
+    {
+      "text": "Add water to make a sauce. Stir in cornstarch slurry and simmer until lightly thickened; adjust with a little more soy sauce if needed.",
+      "timestampSeconds": 21
+    },
+    {
+      "text": "Take the prepared steamed egg custard and gently score its surface with a knife so the sauce can seep in.",
+      "timestampSeconds": 34
+    },
+    {
+      "text": "Pour the minced pork sauce over the custard and garnish with chopped scallions. Serve with rice.",
+      "timestampSeconds": 41
+    }
+  ],
+  "tags": [
+    "main course",
+    "taiwanese",
+    "egg",
+    "pork"
+  ],
+  "notes": "Use a prepared smooth steamed egg custard as the base. Serve the custard and savory minced pork sauce over rice.",
+  "confidence": {
+    "quantities": "low",
+    "mincedPork": "medium",
+    "custardPreparation": "low",
+    "steps": "high"
+  }
+}
