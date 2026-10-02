@@ -1,0 +1,159 @@
+{
+  "title": "Chinese Braised Pork Ribs",
+  "creatorHandle": "onefoodie",
+  "sourceUrl": "https://www.youtube.com/watch?v=G7a1F_FnZqQ",
+  "sourcePlatform": "youtube",
+  "servings": 3,
+  "totalTimeMinutes": 115,
+  "ingredients": [
+    {
+      "rawText": "Pork ribs",
+      "name": "pork ribs",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "1 spoon salt, for cleaning",
+      "name": "salt",
+      "quantity": 1,
+      "unit": "spoon",
+      "optional": false
+    },
+    {
+      "rawText": "1 small spoon flour, for cleaning",
+      "name": "flour",
+      "quantity": 1,
+      "unit": "small spoon",
+      "optional": false
+    },
+    {
+      "rawText": "A little white vinegar, for cleaning",
+      "name": "white vinegar",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Scallions, for blanching, braising and garnish",
+      "name": "scallions",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Ginger slices for blanching, plus 3 slices for braising",
+      "name": "ginger",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Cooking wine, for blanching",
+      "name": "cooking wine",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "2 star anise",
+      "name": "star anise",
+      "quantity": 2,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "8 dried red chilies",
+      "name": "dried red chilies",
+      "quantity": 8,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "1 small can beer",
+      "name": "beer",
+      "quantity": 1,
+      "unit": "can",
+      "optional": false
+    },
+    {
+      "rawText": "1 spoon light soy sauce",
+      "name": "light soy sauce",
+      "quantity": 1,
+      "unit": "spoon",
+      "optional": false
+    },
+    {
+      "rawText": "1/2 spoon dark soy sauce",
+      "name": "dark soy sauce",
+      "quantity": 0.5,
+      "unit": "spoon",
+      "optional": false
+    },
+    {
+      "rawText": "1 small spoon oyster sauce",
+      "name": "oyster sauce",
+      "quantity": 1,
+      "unit": "small spoon",
+      "optional": false
+    },
+    {
+      "rawText": "1 spoon sweet bean sauce (tianmianjiang)",
+      "name": "sweet bean sauce",
+      "quantity": 1,
+      "unit": "spoon",
+      "optional": false
+    },
+    {
+      "rawText": "Water, enough to cover the ribs",
+      "name": "water",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    }
+  ],
+  "steps": [
+    {
+      "text": "Toss the ribs with salt, flour and a little white vinegar. Add water, rub gently, then rinse away the flour and drain.",
+      "timestampSeconds": 51
+    },
+    {
+      "text": "Place the ribs in cold water with scallions, ginger and cooking wine. Bring to a boil over medium-low heat, skim the foam, then boil for another 1–2 minutes.",
+      "timestampSeconds": 130
+    },
+    {
+      "text": "Lift out the ribs, rinse in warm water and drain.",
+      "timestampSeconds": 176
+    },
+    {
+      "text": "Put the ribs in a clean pan with 3 ginger slices, a scallion section, star anise, dried chilies, beer, light soy sauce, dark soy sauce, oyster sauce and sweet bean sauce. Add water to cover.",
+      "timestampSeconds": 223
+    },
+    {
+      "text": "Cover, bring to a boil, then reduce to low heat and simmer for 1 1/2 hours until tender.",
+      "timestampSeconds": 264
+    },
+    {
+      "text": "Remove the aromatics during simmering once they have released their flavor. When the ribs are tender, uncover and turn up the heat to reduce the sauce until thick.",
+      "timestampSeconds": 267
+    },
+    {
+      "text": "Plate the ribs, spoon over the sauce and garnish with chopped scallions.",
+      "timestampSeconds": 315
+    }
+  ],
+  "tags": [
+    "main course",
+    "dinner",
+    "chinese",
+    "pork ribs",
+    "braised"
+  ],
+  "notes": "Reduce the sauce at the end until it coats the ribs. The sweet bean sauce provides color and flavor without caramelizing sugar.",
+  "confidence": {
+    "servings": "low",
+    "totalTimeMinutes": "low",
+    "ingredients.quantity": "medium",
+    "steps[0].timestampSeconds": "medium"
+  }
+}

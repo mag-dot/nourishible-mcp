@@ -1,0 +1,217 @@
+[
+  [
+    "ja",
+    "白菜と焼き豆腐の土鍋煮",
+    [
+      "木綿豆腐",
+      "白菜",
+      "食用油",
+      "しょうが",
+      "エシャロット",
+      "赤とうがらし",
+      "減塩しょうゆ",
+      "黒酢",
+      "米酒",
+      "水",
+      "白こしょう",
+      "コーンスターチの水溶き",
+      "青ねぎ"
+    ],
+    [
+      "木綿豆腐、厚めの四角に切る",
+      "白菜、食べやすく切る",
+      "食用油適量",
+      "しょうが、細切り",
+      "エシャロット、薄切り",
+      "赤とうがらし、薄切り",
+      "減塩しょうゆ適量",
+      "黒酢適量",
+      "米酒",
+      "水適量",
+      "白こしょう適量",
+      "とろみづけ用のコーンスターチの水溶き",
+      "仕上げ用の刻み青ねぎ"
+    ],
+    [
+      "フライパンに油を熱し、豆腐を両面きつね色に焼いて取り出す。",
+      "土鍋に少量の油を熱し、細切りしょうが、エシャロット、赤とうがらしを香りが立つまで炒める。",
+      "白菜を加えて混ぜる。減塩しょうゆ、黒酢、米酒、水を加え、ふたをして白菜が柔らかくなり始めるまで煮る。",
+      "焼いた豆腐を上に並べる。再びふたをして、白菜が柔らかくなり豆腐に味がしみるまで煮る。",
+      "白こしょうで味を整える。少量の水溶きコーンスターチを加え、煮汁に軽くとろみをつける。",
+      "刻み青ねぎを散らし、熱いうちに出す。"
+    ],
+    "豆腐を先に焼くと形が崩れにくくなり、煮汁もよく吸います。"
+  ],
+  [
+    "ko",
+    "배추와 구운 두부 뚝배기찜",
+    [
+      "단단한 두부",
+      "배추",
+      "식용유",
+      "생강",
+      "샬롯",
+      "홍고추",
+      "저염 간장",
+      "흑초",
+      "쌀술",
+      "물",
+      "백후추",
+      "옥수수전분물",
+      "쪽파"
+    ],
+    [
+      "단단한 두부, 두꺼운 사각형으로 썰기",
+      "배추, 먹기 좋은 크기로 썰기",
+      "식용유 적당량",
+      "생강, 가늘게 채 썰기",
+      "샬롯, 얇게 썰기",
+      "홍고추, 얇게 썰기",
+      "저염 간장 적당량",
+      "흑초 적당량",
+      "쌀술",
+      "물 적당량",
+      "백후추 적당량",
+      "농도 조절용 옥수수전분물",
+      "고명용 다진 쪽파"
+    ],
+    [
+      "팬에 기름을 달군다. 두부를 양면이 노릇하게 굽고 덜어 둔다.",
+      "뚝배기에 기름을 조금 달군다. 생강채, 샬롯, 홍고추를 향이 날 때까지 볶는다.",
+      "배추를 넣고 섞는다. 저염 간장, 흑초, 쌀술을 넣은 뒤 물을 붓는다. 뚜껑을 덮어 배추가 부드러워지기 시작할 때까지 끓인다.",
+      "구운 두부를 위에 올린다. 다시 덮고 배추가 연해지고 두부에 소스가 배어들 때까지 끓인다.",
+      "백후추로 간한다. 전분물을 조금 섞어 끓는 소스가 살짝 걸쭉해지게 한다.",
+      "다진 쪽파를 뿌려 뜨겁게 낸다."
+    ],
+    "두부를 먼저 노릇하게 구우면 모양을 유지하고 소스를 잘 흡수합니다."
+  ],
+  [
+    "zh-TW",
+    "白菜煎豆腐煲",
+    [
+      "板豆腐",
+      "大白菜",
+      "食用油",
+      "薑",
+      "紅蔥頭",
+      "紅辣椒",
+      "薄鹽醬油",
+      "黑醋",
+      "米酒",
+      "水",
+      "白胡椒",
+      "玉米澱粉水",
+      "青蔥"
+    ],
+    [
+      "板豆腐，切厚方塊",
+      "大白菜，切塊",
+      "食用油適量",
+      "薑，切細絲",
+      "紅蔥頭，切片",
+      "紅辣椒，切片",
+      "薄鹽醬油適量",
+      "黑醋適量",
+      "米酒",
+      "水適量",
+      "白胡椒適量",
+      "玉米澱粉水，用於勾芡",
+      "青蔥末，用於點綴"
+    ],
+    [
+      "平底鍋熱油，豆腐煎至兩面金黃，盛起備用。",
+      "砂鍋熱少許油，炒香薑絲、紅蔥頭片和紅辣椒。",
+      "加入大白菜翻拌，加入薄鹽醬油、黑醋、米酒，再加水。蓋上鍋蓋，煮至白菜開始變軟。",
+      "鋪上煎好的豆腐，再蓋上鍋蓋，煮至白菜軟嫩、豆腐吸收醬汁。",
+      "加入白胡椒調味，拌入少量玉米澱粉水，讓滾煮中的醬汁略為濃稠。",
+      "撒上青蔥末，趁熱享用。"
+    ],
+    "豆腐先煎至金黃再加入白菜，較能保持完整，也能吸收醬汁。"
+  ],
+  [
+    "id",
+    "Sawi Putih dan Tahu Goreng dalam Panci Tanah Liat",
+    [
+      "Tahu padat",
+      "Sawi putih",
+      "Minyak goreng",
+      "Jahe",
+      "Bawang merah",
+      "Cabai merah",
+      "Kecap asin rendah garam",
+      "Cuka hitam",
+      "Arak beras",
+      "Air",
+      "Lada putih",
+      "Larutan maizena",
+      "Daun bawang"
+    ],
+    [
+      "Tahu padat, potong persegi tebal",
+      "Sawi putih, potong-potong",
+      "Minyak goreng secukupnya",
+      "Jahe, iris tipis memanjang",
+      "Bawang merah, iris",
+      "Cabai merah, iris",
+      "Kecap asin rendah garam secukupnya",
+      "Cuka hitam secukupnya",
+      "Arak beras",
+      "Air secukupnya",
+      "Lada putih secukupnya",
+      "Larutan maizena untuk mengentalkan",
+      "Daun bawang cincang untuk taburan"
+    ],
+    [
+      "Panaskan minyak dalam wajan. Goreng tahu hingga kedua sisinya keemasan, lalu sisihkan.",
+      "Panaskan sedikit minyak dalam panci tanah liat. Tumis jahe, bawang merah dan cabai merah hingga harum.",
+      "Masukkan sawi putih dan aduk. Tambahkan kecap asin rendah garam, cuka hitam dan arak beras, lalu air. Tutup dan masak perlahan hingga sawi mulai lunak.",
+      "Tata tahu goreng di atasnya. Tutup kembali dan masak hingga sawi empuk serta tahu menyerap saus.",
+      "Bumbui dengan lada putih. Adukkan sedikit larutan maizena untuk mengentalkan saus yang mendidih.",
+      "Taburi daun bawang cincang dan sajikan panas."
+    ],
+    "Goreng tahu hingga kecokelatan sebelum dimasukkan agar bentuknya tetap utuh dan menyerap saus."
+  ],
+  [
+    "tl",
+    "Repolyong Napa at Pritong Tokwa sa Palayok",
+    [
+      "Matigas na tokwa",
+      "Repolyong napa",
+      "Mantika",
+      "Luya",
+      "Shallot",
+      "Pulang sili",
+      "Toyong mababa sa asin",
+      "Itim na suka",
+      "Alak na bigas",
+      "Tubig",
+      "Puting paminta",
+      "Tinunaw na gawgaw",
+      "Sibuyas na mura"
+    ],
+    [
+      "Matigas na tokwa, hiniwang makakapal na parisukat",
+      "Repolyong napa, hiniwa",
+      "Mantika ayon sa kailangan",
+      "Luya, hiniwang maninipis na pahaba",
+      "Shallot, hiniwa",
+      "Pulang sili, hiniwa",
+      "Toyong mababa sa asin ayon sa panlasa",
+      "Itim na suka ayon sa panlasa",
+      "Alak na bigas",
+      "Tubig ayon sa kailangan",
+      "Puting paminta ayon sa panlasa",
+      "Tinunaw na gawgaw para pampalapot",
+      "Tinadtad na sibuyas na mura para pangbudbod"
+    ],
+    [
+      "Magpainit ng mantika sa kawali. Iprito ang tokwa hanggang ginintuang kulay ang magkabilang panig at itabi.",
+      "Magpainit ng kaunting mantika sa palayok. Igisa ang luya, shallot at pulang sili hanggang mabango.",
+      "Idagdag ang repolyong napa at haluin. Ilagay ang toyong mababa sa asin, itim na suka at alak na bigas, saka tubig. Takpan at pakuluan nang banayad hanggang magsimulang lumambot ang repolyo.",
+      "Ipatong ang pritong tokwa. Takpan muli at lutuin hanggang malambot ang repolyo at masipsip ng tokwa ang sarsa.",
+      "Timplahan ng puting paminta. Ihalo ang kaunting tinunaw na gawgaw upang bahagyang lumapot ang kumukulong sarsa.",
+      "Budburan ng sibuyas na mura at ihain nang mainit."
+    ],
+    "Iprito muna ang tokwa hanggang magkulay upang manatiling buo at masipsip nito ang sarsa."
+  ]
+]

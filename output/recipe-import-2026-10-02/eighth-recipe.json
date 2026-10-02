@@ -1,0 +1,127 @@
+{
+  "title": "Braised Winter Melon with Dried Shrimp",
+  "sourceUrl": "https://www.youtube.com/shorts/1UKsr42hsQw",
+  "sourcePlatform": "youtube",
+  "creatorHandle": "GloriaKitchen貞姨姨廚房",
+  "servings": 2,
+  "totalTimeMinutes": 25,
+  "ingredients": [
+    {
+      "name": "winter melon",
+      "rawText": "1 catty winter melon, peeled, deseeded and diced",
+      "quantity": 1,
+      "unit": "catty",
+      "optional": false
+    },
+    {
+      "name": "dried shrimp",
+      "rawText": "2 tbsp dried shrimp, soaked until soft; reserve soaking water",
+      "quantity": 2,
+      "unit": "tbsp",
+      "optional": false
+    },
+    {
+      "name": "ginger",
+      "rawText": "2 slices ginger",
+      "quantity": 2,
+      "unit": "slice",
+      "optional": false
+    },
+    {
+      "name": "garlic",
+      "rawText": "2 cloves garlic",
+      "quantity": 2,
+      "unit": "clove",
+      "optional": false
+    },
+    {
+      "name": "salt",
+      "rawText": "1 tsp salt, added after the melon softens",
+      "quantity": 1,
+      "unit": "tsp",
+      "optional": false
+    },
+    {
+      "name": "sugar",
+      "rawText": "1/4 tsp sugar",
+      "quantity": 0.25,
+      "unit": "tsp",
+      "optional": false
+    },
+    {
+      "name": "light soy sauce",
+      "rawText": "1 tsp light soy sauce",
+      "quantity": 1,
+      "unit": "tsp",
+      "optional": false
+    },
+    {
+      "name": "oyster sauce",
+      "rawText": "1 tsp oyster sauce",
+      "quantity": 1,
+      "unit": "tsp",
+      "optional": false
+    },
+    {
+      "name": "cornstarch",
+      "rawText": "1 tsp cornstarch for the slurry",
+      "quantity": 1,
+      "unit": "tsp",
+      "optional": false
+    },
+    {
+      "name": "water",
+      "rawText": "1 tsp water for the slurry, plus water to soak the shrimp",
+      "quantity": 1,
+      "unit": "tsp",
+      "optional": false
+    },
+    {
+      "name": "cooking oil",
+      "rawText": "Cooking oil, as needed to fry the aromatics",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    }
+  ],
+  "steps": [
+    {
+      "text": "Peel and deseed the winter melon and cut into cubes. Soak the dried shrimp until softened, reserving their soaking water.",
+      "timestampSeconds": null
+    },
+    {
+      "text": "Mix 1 tsp cornstarch with 1 tsp water to make a slurry.",
+      "timestampSeconds": null
+    },
+    {
+      "text": "Heat a little oil and fry the ginger, garlic and softened dried shrimp until fragrant.",
+      "timestampSeconds": null
+    },
+    {
+      "text": "Add the winter melon and stir to combine. Pour in the reserved shrimp soaking water, cover and braise over medium heat for about 5 minutes, until the melon is translucent and tender.",
+      "timestampSeconds": null
+    },
+    {
+      "text": "Add the salt, sugar, light soy sauce and oyster sauce only after the melon has softened, and mix well.",
+      "timestampSeconds": null
+    },
+    {
+      "text": "Stir the slurry again, pour it into the pan and simmer until the sauce thickens. Serve hot.",
+      "timestampSeconds": null
+    }
+  ],
+  "tags": [
+    "side dish",
+    "cantonese",
+    "winter melon",
+    "dried shrimp"
+  ],
+  "notes": "Serves 2–3. Add the seasonings after the winter melon softens to preserve its natural sweetness.",
+  "confidence": {
+    "ingredients": "high",
+    "quantities": "high",
+    "steps": "high",
+    "servings": "high",
+    "supportingRecipeMatch": "high"
+  }
+}

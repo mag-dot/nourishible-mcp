@@ -1,0 +1,114 @@
+{
+  "title": "Crispy Potato and Corn Fritters",
+  "sourceUrl": "https://www.youtube.com/shorts/Ip9CZwtYlJs",
+  "sourcePlatform": "youtube",
+  "creatorHandle": "masacooking",
+  "servings": 2,
+  "totalTimeMinutes": 20,
+  "ingredients": [
+    {
+      "rawText": "Potato, peeled and finely diced",
+      "name": "potato",
+      "category": "produce",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Flour",
+      "name": "flour",
+      "category": "pantry",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Cornstarch",
+      "name": "cornstarch",
+      "category": "pantry",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Oil, for the batter and frying",
+      "name": "oil",
+      "category": "pantry",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Water, to bind the batter",
+      "name": "water",
+      "category": "other",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Corn kernels",
+      "name": "corn kernels",
+      "category": "produce",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Salt, to finish",
+      "name": "salt",
+      "category": "pantry",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Aonori seaweed flakes, to finish",
+      "name": "aonori seaweed flakes",
+      "category": "pantry",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    }
+  ],
+  "steps": [
+    {
+      "text": "Peel the potato and cut it into small, even dice.",
+      "timestampSeconds": 7
+    },
+    {
+      "text": "Mix the potato with flour, cornstarch, a little oil and water until evenly coated in a batter.",
+      "timestampSeconds": 21
+    },
+    {
+      "text": "Fold in the corn kernels.",
+      "timestampSeconds": 28
+    },
+    {
+      "text": "Heat oil in a frying pan. Spoon in small portions of the mixture and flatten into thin fritters.",
+      "timestampSeconds": 33
+    },
+    {
+      "text": "Fry until the underside is golden, then flip and cook the other side until crisp and the potato is tender.",
+      "timestampSeconds": 40
+    },
+    {
+      "text": "Transfer to a wire rack to drain. Sprinkle with salt and aonori and serve.",
+      "timestampSeconds": 46
+    }
+  ],
+  "tags": [
+    "snack",
+    "side dish",
+    "japanese",
+    "potato",
+    "corn",
+    "vegetarian"
+  ],
+  "notes": "Cut the potato into small, even pieces and flatten the fritters so they cook through as the outside crisps.",
+  "confidence": {
+    "servings": "low",
+    "totalTimeMinutes": "low",
+    "ingredients.quantity": "low"
+  }
+}

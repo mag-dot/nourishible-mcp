@@ -1,0 +1,142 @@
+{
+  "title": "Napa Cabbage and Pan-Fried Tofu Claypot",
+  "sourceUrl": "https://www.youtube.com/shorts/gNqXX7lKo3I",
+  "sourcePlatform": "youtube",
+  "creatorHandle": "happycooking-z4i",
+  "servings": null,
+  "totalTimeMinutes": null,
+  "ingredients": [
+    {
+      "name": "firm tofu",
+      "rawText": "Firm tofu, cut into thick squares",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "napa cabbage",
+      "rawText": "Napa cabbage, cut into pieces",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "cooking oil",
+      "rawText": "Cooking oil, as needed",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "ginger",
+      "rawText": "Ginger, cut into thin strips",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "shallots",
+      "rawText": "Shallots, sliced",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "red chili",
+      "rawText": "Red chili, sliced",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "reduced-salt soy sauce",
+      "rawText": "Reduced-salt soy sauce, to taste",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "black vinegar",
+      "rawText": "Black vinegar, to taste",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "rice wine",
+      "rawText": "Rice wine",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "water",
+      "rawText": "Water, as needed",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "white pepper",
+      "rawText": "White pepper, to taste",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "cornstarch slurry",
+      "rawText": "Cornstarch slurry, to thicken",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "name": "scallions",
+      "rawText": "Chopped scallions, for garnish",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    }
+  ],
+  "steps": [
+    {
+      "text": "Heat oil in a frying pan. Pan-fry the tofu squares until golden on both sides; set aside.",
+      "timestampSeconds": 3
+    },
+    {
+      "text": "Heat a little oil in a claypot. Fry the ginger strips, sliced shallots and red chili until fragrant.",
+      "timestampSeconds": 12
+    },
+    {
+      "text": "Add napa cabbage and stir. Add reduced-salt soy sauce, black vinegar and rice wine, then water. Cover and simmer until the cabbage begins to soften.",
+      "timestampSeconds": 16
+    },
+    {
+      "text": "Arrange the fried tofu on top. Cover again and simmer until the cabbage is tender and the tofu has absorbed the sauce.",
+      "timestampSeconds": 33
+    },
+    {
+      "text": "Season with white pepper. Stir in a little cornstarch slurry to lightly thicken the bubbling sauce.",
+      "timestampSeconds": 40
+    },
+    {
+      "text": "Scatter chopped scallions over the top and serve hot.",
+      "timestampSeconds": 46
+    }
+  ],
+  "tags": [
+    "main course",
+    "tofu",
+    "napa cabbage",
+    "vegetarian"
+  ],
+  "notes": "Brown the tofu before adding it to the cabbage so it holds its shape and absorbs the sauce.",
+  "confidence": {
+    "quantities": "low",
+    "ginger": "medium",
+    "shallots": "medium",
+    "redChili": "medium",
+    "whitePepper": "medium",
+    "steps": "high"
+  }
+}
