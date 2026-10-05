@@ -707,6 +707,19 @@ detail agree — and note that path has no video file to re-grab from, so its sc
 under 512px wide** (the server rejects it too) and re-grab before picking again; don't
 persist a low-res frame just because it's the best-composed one available.
 
+**The thumbnail carries no text.** Prefer a frame without a caption, title card or
+watermark, but a good finished-dish shot with the creator's title stamped across it still
+beats a worse frame. When your #1 pick has on-screen text over the food, remove it before
+you upload: open the `thumb_*.jpg`, note a pixel box around the text, and run
+
+```bash
+python3 "$SKILL_DIR/scripts/remove_text.py" thumb_X.jpg thumb_X_clean.jpg --box x0,y0,x1,y1
+```
+
+then open the result and check only the dish remains (no ghost letters, no smeared
+patch). Upload the cleaned file. This replaces the "minor caption is fine" allowance in
+criterion 1 for the #1 pick; #2/#3 candidates are not cleaned.
+
 Record your #1 pick's `thumb_*.jpg` path — that's the one to persist as the recipe's
 thumbnail in Step 6.5 below. Pass #2 and #3's frame paths to `save_recipe`/`update_recipe`
 as thumbnail candidates too (see Step 6.5) — nourishible keeps them as a 60-day reviewable
@@ -886,7 +899,7 @@ relayed above), end with:
 
 ```
 Saved "Tomato & Egg Stir-fry" to your nourishible library: https://nourishible.com/recipes/tomato-egg-stir-fry
-Translate it into all languages (日本語, 한국어, 繁體中文, Bahasa Indonesia, Tagalog)?
+Translating it into 日本語, 한국어, 繁體中文, Bahasa Indonesia, Tagalog…
 ```
 
 - Line 1 always: the saved title and `https://nourishible.com/recipes/<slug>` from the
@@ -895,13 +908,17 @@ Translate it into all languages (日本語, 한국어, 繁體中文, Bahasa Indo
 - Line 2 only when the latest `save_recipe` / `get_my_recipe` response has
   `translation.available: true`. That field is present only for admin accounts —
   translation is admin-only — so with no `translation` field, stop after line 1 and don't
-  offer it. With `translation.available: false`, replace line 2 with its `reason` in a few
+  translate. With `translation.available: false`, replace line 2 with its `reason` in a few
   words (usually: it's waiting for review and can be translated once published).
-- When a carousel saved several recipes, one line 1 per recipe, and ask the translation
-  question once for all of them.
+- When a carousel saved several recipes, one line 1 per recipe, and translate them
+  all.
 
-**If the user says yes**, translate it yourself — nourishible's server runs no LLM for
-translation:
+**Translation is automatic once the save and thumbnail have both succeeded** — don't ask
+first. The one exception is anything in doubt: a `low` confidence entry, a guessed quantity
+or unit, an unclear dish, or an unclear note/safety line. Ask the user to confirm or correct
+*that specific point* and `update_recipe` before translating, because translations copy the
+English and a doubtful line would be copied five times. Nothing in doubt → go straight on.
+Translate it yourself — nourishible's server runs no LLM for translation:
 
 1. `list_untranslated_recipes` with `{ recipeId, limit: 5 }`. Each task is one locale:
    the English `source`, a `brief` (rules and any glossary names that must be used
@@ -918,15 +935,24 @@ translation:
    failed with the server's message.
 4. Close with one line: which locales saved, and which (if any) failed.
 
-This offer belongs to this skill running in the user's own agent. The hosted extraction
-pipeline (app share sheet, Instagram capture queue) never asks — it has no user in the
+This automatic step belongs to this skill running in the user's own agent. The hosted extraction
+pipeline (app share sheet, Instagram capture queue) never does it — it has no user in the
 loop.
 
 ## Step 7 — clean up
 
-If there's no likely follow-up on this specific video, `rm -rf` the working directory once
-the JSON has been shown/saved wherever the user wants it kept. If the user might ask to
-re-extract or adjust, leave it.
+**Before deleting anything, keep the frame sheet.** The working directory is the only
+record of which frames were considered and why one won. Run
+
+```bash
+python3 "$SKILL_DIR/scripts/frame_sheet.py" "$OUT_DIR" --slug "<saved slug>" --picked "<thumb file you uploaded>"
+```
+
+which writes a labelled contact sheet of every frame, the picked frame outlined, plus the
+picked file and a `picks.txt` to `~/.nourishible/frame-sheets/<slug>/`. That folder is
+never cleaned up by this skill. Then, if there's no likely follow-up on this specific
+video, `rm -rf` the working directory once the JSON has been shown/saved wherever the user
+wants it kept. If the user might ask to re-extract or adjust, leave it.
 
 ## Failure modes and handling
 
