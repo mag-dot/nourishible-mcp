@@ -853,11 +853,36 @@ still owe the other half of.
    hazard, only 14 specifically cited ones, and a recipe that doesn't read as baby food at
    all is never checked in the first place.
 
+### Translate it (automatic once saved)
+
+A saved recipe is not finished until its translations are. After the save **and** the
+thumbnail have both succeeded, translate it without being asked:
+
+1. **Settle anything in doubt first.** If any `confidence` entry is `low`, a quantity or
+   unit was guessed, the dish is not clearly this video's dish, or a note/safety line is
+   unclear, ask the user to confirm or correct *that specific point* and `update_recipe`
+   before translating — translations copy the English, so a doubtful line gets copied
+   five times. If nothing is in doubt, do not ask; go straight on.
+2. Call `list_untranslated_recipes` with the recipe's `recipeId`, translate each task's
+   source into every locale it lists (ja, ko, zh-TW, id, tl) following the brief it
+   returns, and save each with `save_recipe_translation`.
+3. Report the per-locale result (saved/failed) in your Step 6 summary. A failed locale is
+   reported, not retried in a loop.
+
 ## Step 7 — clean up
 
-If there's no likely follow-up on this specific video, `rm -rf` the working directory once
-the JSON has been shown/saved wherever the user wants it kept. If the user might ask to
-re-extract or adjust, leave it.
+**Before deleting anything, keep the frame sheet.** The working directory is the only
+record of which frames were considered and why one won. Run
+
+```bash
+python3 "$SKILL_DIR/scripts/frame_sheet.py" "$OUT_DIR" --slug "<saved slug>" --picked "<thumb file you uploaded>"
+```
+
+which writes a labelled contact sheet of every frame, the picked frame outlined, plus the
+picked file and a `picks.txt` to `~/.nourishible/frame-sheets/<slug>/`. That folder is
+never cleaned up by this skill. Then, if there's no likely follow-up on this specific
+video, `rm -rf` the working directory once the JSON has been shown/saved wherever the user
+wants it kept. If the user might ask to re-extract or adjust, leave it.
 
 ## Failure modes and handling
 
