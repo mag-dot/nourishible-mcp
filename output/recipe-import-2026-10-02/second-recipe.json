@@ -1,0 +1,154 @@
+{
+  "title": "Braised Egg Tofu with Enoki Mushrooms and Minced Pork",
+  "sourceUrl": "https://www.youtube.com/shorts/SSPV0-36ReQ",
+  "sourcePlatform": "youtube",
+  "creatorHandle": "ufoodulifestyle",
+  "servings": 2,
+  "totalTimeMinutes": 15,
+  "ingredients": [
+    {
+      "rawText": "4 tubes egg tofu",
+      "quantity": 4,
+      "unit": "tube",
+      "name": "egg tofu",
+      "category": "protein",
+      "optional": false
+    },
+    {
+      "rawText": "150 g minced pork",
+      "quantity": 150,
+      "unit": "g",
+      "name": "minced pork",
+      "category": "protein",
+      "optional": false
+    },
+    {
+      "rawText": "2 bunches enoki mushrooms",
+      "quantity": 2,
+      "unit": "bunch",
+      "name": "enoki mushrooms",
+      "category": "produce",
+      "optional": false
+    },
+    {
+      "rawText": "1 bowl chopped scallions",
+      "quantity": 1,
+      "unit": "bowl",
+      "name": "scallions",
+      "category": "produce",
+      "optional": false
+    },
+    {
+      "rawText": "3 garlic cloves",
+      "quantity": 3,
+      "unit": "clove",
+      "name": "garlic",
+      "category": "produce",
+      "optional": false
+    },
+    {
+      "rawText": "Cornstarch, for coating",
+      "quantity": null,
+      "unit": null,
+      "name": "cornstarch",
+      "category": "pantry",
+      "optional": false
+    },
+    {
+      "rawText": "2 tsp light soy sauce",
+      "quantity": 2,
+      "unit": "tsp",
+      "name": "light soy sauce",
+      "category": "pantry",
+      "optional": false
+    },
+    {
+      "rawText": "1 tsp dark soy sauce",
+      "quantity": 1,
+      "unit": "tsp",
+      "name": "dark soy sauce",
+      "category": "pantry",
+      "optional": false
+    },
+    {
+      "rawText": "2 tsp oyster sauce",
+      "quantity": 2,
+      "unit": "tsp",
+      "name": "oyster sauce",
+      "category": "pantry",
+      "optional": false
+    },
+    {
+      "rawText": "1/2 tsp ground pepper",
+      "quantity": 0.5,
+      "unit": "tsp",
+      "name": "ground pepper",
+      "category": "pantry",
+      "optional": false
+    },
+    {
+      "rawText": "1 tsp sugar",
+      "quantity": 1,
+      "unit": "tsp",
+      "name": "sugar",
+      "category": "pantry",
+      "optional": false
+    },
+    {
+      "rawText": "1 tbsp Shaoxing wine",
+      "quantity": 1,
+      "unit": "tbsp",
+      "name": "Shaoxing wine",
+      "category": "pantry",
+      "optional": false
+    },
+    {
+      "rawText": "2 tbsp water",
+      "quantity": 2,
+      "unit": "tbsp",
+      "name": "water",
+      "category": "other",
+      "optional": false
+    },
+    {
+      "rawText": "Oil, for frying",
+      "quantity": null,
+      "unit": null,
+      "name": "oil",
+      "category": "pantry",
+      "optional": false
+    }
+  ],
+  "steps": [
+    {
+      "text": "Mix the light soy sauce, dark soy sauce, oyster sauce, pepper, sugar, Shaoxing wine and water into a sauce.",
+      "timestampSeconds": 8
+    },
+    {
+      "text": "Slice the egg tofu, pat dry and coat with cornstarch. Heat oil in a pan, fry both sides until golden, then set aside.",
+      "timestampSeconds": 15
+    },
+    {
+      "text": "Mince the garlic and fry until fragrant. Add some scallions, the minced pork and enoki mushrooms, and stir-fry until the pork is cooked.",
+      "timestampSeconds": 26
+    },
+    {
+      "text": "Return the tofu to the pan and pour in the sauce. Cover and simmer over low heat for 5 minutes until the sauce reduces.",
+      "timestampSeconds": 44
+    },
+    {
+      "text": "Sprinkle with the remaining scallions and serve.",
+      "timestampSeconds": 50
+    }
+  ],
+  "tags": [
+    "main course",
+    "dinner",
+    "cantonese",
+    "egg tofu",
+    "pork",
+    "enoki mushrooms"
+  ],
+  "notes": "Pan-fry the egg tofu before braising to help it hold its shape. Serve with rice.",
+  "confidence": {}
+}

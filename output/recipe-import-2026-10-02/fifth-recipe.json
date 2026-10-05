@@ -1,0 +1,240 @@
+{
+  "title": "Tomato and Egg Two Ways",
+  "sourceUrl": "https://www.youtube.com/watch?v=ZkAnIODo2Mg",
+  "sourcePlatform": "youtube",
+  "creatorHandle": "hkhoy",
+  "servings": null,
+  "totalTimeMinutes": null,
+  "ingredients": [
+    {
+      "name": "cherry tomatoes",
+      "quantity": 400,
+      "unit": "g",
+      "rawText": "Version A: 400 g cherry tomatoes, halved",
+      "optional": false
+    },
+    {
+      "name": "eggs",
+      "quantity": 6,
+      "unit": null,
+      "rawText": "Version A: 6 eggs, divided into three pairs",
+      "optional": false
+    },
+    {
+      "name": "onion",
+      "quantity": 200,
+      "unit": "g",
+      "rawText": "Version A: 200 g sliced onion",
+      "optional": false
+    },
+    {
+      "name": "chicken stock",
+      "quantity": 200,
+      "unit": "g",
+      "rawText": "Version A: 200 g chicken stock",
+      "optional": false
+    },
+    {
+      "name": "scallions",
+      "quantity": 20,
+      "unit": "g",
+      "rawText": "Version A: 20 g chopped scallions",
+      "optional": false
+    },
+    {
+      "name": "light soy sauce",
+      "quantity": 20,
+      "unit": "g",
+      "rawText": "Version A: 20 g light soy sauce",
+      "optional": false
+    },
+    {
+      "name": "Tabasco",
+      "quantity": 10,
+      "unit": "g",
+      "rawText": "Version A: 10 g Tabasco",
+      "optional": false
+    },
+    {
+      "name": "salt",
+      "quantity": null,
+      "unit": null,
+      "rawText": "Version A: salt, to taste",
+      "optional": false
+    },
+    {
+      "name": "cooking oil",
+      "quantity": null,
+      "unit": null,
+      "rawText": "Version A: cooking oil, as needed",
+      "optional": false
+    },
+    {
+      "name": "tomatoes",
+      "quantity": 5,
+      "unit": null,
+      "rawText": "Version B: 5 medium tomatoes (about 1 kg), divided between chunks and dice",
+      "optional": false
+    },
+    {
+      "name": "eggs",
+      "quantity": 5,
+      "unit": null,
+      "rawText": "Version B: 5 eggs",
+      "optional": false
+    },
+    {
+      "name": "garlic",
+      "quantity": 1,
+      "unit": "tbsp",
+      "rawText": "Version B: 1 tbsp minced garlic",
+      "optional": false
+    },
+    {
+      "name": "ginger",
+      "quantity": 1,
+      "unit": "tbsp",
+      "rawText": "Version B: 1 tbsp minced ginger",
+      "optional": false
+    },
+    {
+      "name": "water or stock",
+      "quantity": 0.75,
+      "unit": "cup",
+      "rawText": "Version B: about 3/4 cup water or stock",
+      "optional": false
+    },
+    {
+      "name": "scallions",
+      "quantity": null,
+      "unit": null,
+      "rawText": "Version B: chopped scallions, to taste",
+      "optional": false
+    },
+    {
+      "name": "ketchup",
+      "quantity": 3,
+      "unit": "tbsp",
+      "rawText": "Version B: 3 tbsp ketchup",
+      "optional": false
+    },
+    {
+      "name": "tomato paste",
+      "quantity": 0.75,
+      "unit": "tbsp",
+      "rawText": "Version B: 3/4 tbsp tomato paste",
+      "optional": false
+    },
+    {
+      "name": "sugar",
+      "quantity": 2,
+      "unit": "tbsp",
+      "rawText": "Version B: 2 tbsp sugar",
+      "optional": false
+    },
+    {
+      "name": "salt",
+      "quantity": 0.5,
+      "unit": "tsp",
+      "rawText": "Version B: 1/2 tsp salt for the sauce",
+      "optional": false
+    },
+    {
+      "name": "light soy sauce",
+      "quantity": 1,
+      "unit": "tbsp",
+      "rawText": "Version B: 1 tbsp light soy sauce",
+      "optional": false
+    },
+    {
+      "name": "pepper",
+      "quantity": null,
+      "unit": null,
+      "rawText": "Version B: pepper, to taste",
+      "optional": false
+    },
+    {
+      "name": "shallot oil",
+      "quantity": 1,
+      "unit": "tbsp",
+      "rawText": "Version B: 1 tbsp shallot oil",
+      "optional": false
+    },
+    {
+      "name": "salt",
+      "quantity": 0.5,
+      "unit": "tsp",
+      "rawText": "Version B: 1/2 tsp salt for the eggs",
+      "optional": false
+    },
+    {
+      "name": "cornstarch slurry",
+      "quantity": null,
+      "unit": null,
+      "rawText": "Version B: cornstarch slurry, as needed",
+      "optional": false
+    },
+    {
+      "name": "cooking oil",
+      "quantity": null,
+      "unit": null,
+      "rawText": "Version B: cooking oil, as needed",
+      "optional": false
+    }
+  ],
+  "steps": [
+    {
+      "text": "A — Ricky Cheung: Trim and halve the cherry tomatoes horizontally. Fry two eggs in a little oil until firm, season with salt and set aside.",
+      "timestampSeconds": 223
+    },
+    {
+      "text": "A: Beat two more eggs with salt; scramble over high heat until just set and set aside.",
+      "timestampSeconds": 274
+    },
+    {
+      "text": "A: Slowly cook the sliced onion in oil with a little salt until soft. Add stock and half the tomatoes; cover and cook over medium heat for 3 minutes.",
+      "timestampSeconds": 354
+    },
+    {
+      "text": "A: Quarter the fried eggs. Add these and the scrambled eggs to the tomato sauce with light soy sauce and Tabasco; cook over medium heat for 1 minute.",
+      "timestampSeconds": 522
+    },
+    {
+      "text": "A: Beat the remaining two eggs with salt and pour evenly over the sauce. Arrange the remaining tomatoes on top, season lightly, cover and cook over medium heat for 1 minute until set. Finish with scallions.",
+      "timestampSeconds": 579
+    },
+    {
+      "text": "B — Jacky Yu: Score the tomatoes, blanch for about 20 seconds, cool in ice water and peel. Divide between chunks and small dice.",
+      "timestampSeconds": 844
+    },
+    {
+      "text": "B: Beat five eggs with 1/2 tsp salt. Heat generous oil in a wok, slowly pour in the eggs and fry until fluffy and just set. Remove and drain.",
+      "timestampSeconds": 994
+    },
+    {
+      "text": "B: Fry minced garlic and ginger until fragrant. Add diced tomatoes, soften and mash into a sauce.",
+      "timestampSeconds": 1067
+    },
+    {
+      "text": "B: Add water or stock, tomato chunks, ketchup, tomato paste, sugar, sauce salt, light soy sauce and pepper. Simmer for about 3 minutes until soft.",
+      "timestampSeconds": 1138
+    },
+    {
+      "text": "B: Return the eggs and fold gently. Add a little cornstarch slurry only if needed to glaze the sauce. Finish with shallot oil and scallions.",
+      "timestampSeconds": 1213
+    }
+  ],
+  "tags": [
+    "main course",
+    "cantonese",
+    "tomato",
+    "egg"
+  ],
+  "notes": "Choose version A (Ricky Cheung's cherry tomatoes with eggs three ways) or version B (Jacky Yu's home-style tomato and egg). Ingredient lines are labeled for each version; they are not intended to be combined.",
+  "confidence": {
+    "ingredients": "high",
+    "steps": "high",
+    "tomatoDivision": "medium",
+    "timestamps": "medium"
+  }
+}

@@ -1,0 +1,1438 @@
+[
+  {
+    "id": "recipe_7awJTXf3tp1jHYp6",
+    "slug": "crispy-potato-and-corn-fritters",
+    "title": "Crispy Potato and Corn Fritters",
+    "sourceUrl": "https://www.youtube.com/shorts/Ip9CZwtYlJs",
+    "sourcePlatform": "youtube",
+    "sourceVideoId": "youtube:Ip9CZwtYlJs",
+    "creatorHandle": "masacooking",
+    "thumbnailUrl": "https://mcp.nourishible.com/thumbnails/8ab44a24-29e1-4a33-bb79-2ccbaa558441.jpg",
+    "thumbnailWidth": 1080,
+    "thumbnailHeight": 1920,
+    "servings": 2,
+    "totalTimeMinutes": 20,
+    "ingredients": [
+      {
+        "rawText": "Potato, peeled and finely diced",
+        "quantity": null,
+        "unit": null,
+        "name": "potato",
+        "optional": false,
+        "category": "produce"
+      },
+      {
+        "rawText": "Flour",
+        "quantity": null,
+        "unit": null,
+        "name": "flour",
+        "optional": false,
+        "category": "pantry"
+      },
+      {
+        "rawText": "Cornstarch",
+        "quantity": null,
+        "unit": null,
+        "name": "cornstarch",
+        "optional": false,
+        "category": "pantry"
+      },
+      {
+        "rawText": "Oil, for the batter and frying",
+        "quantity": null,
+        "unit": null,
+        "name": "oil",
+        "optional": false,
+        "category": "pantry"
+      },
+      {
+        "rawText": "Water, to bind the batter",
+        "quantity": null,
+        "unit": null,
+        "name": "water",
+        "optional": false,
+        "category": "other"
+      },
+      {
+        "rawText": "Corn kernels",
+        "quantity": null,
+        "unit": null,
+        "name": "corn kernels",
+        "optional": false,
+        "category": "produce"
+      },
+      {
+        "rawText": "Salt, to finish",
+        "quantity": null,
+        "unit": null,
+        "name": "salt",
+        "optional": false,
+        "category": "pantry"
+      },
+      {
+        "rawText": "Aonori seaweed flakes, to finish",
+        "quantity": null,
+        "unit": null,
+        "name": "aonori seaweed flakes",
+        "optional": false,
+        "category": "pantry"
+      }
+    ],
+    "steps": [
+      {
+        "text": "Peel the potato and cut it into small, even dice.",
+        "timestampSeconds": 7
+      },
+      {
+        "text": "Mix the potato with flour, cornstarch, a little oil and water until evenly coated in a batter.",
+        "timestampSeconds": 21
+      },
+      {
+        "text": "Fold in the corn kernels.",
+        "timestampSeconds": 28
+      },
+      {
+        "text": "Heat oil in a frying pan. Spoon in small portions of the mixture and flatten into thin fritters.",
+        "timestampSeconds": 33
+      },
+      {
+        "text": "Fry until the underside is golden, then flip and cook the other side until crisp and the potato is tender.",
+        "timestampSeconds": 40
+      },
+      {
+        "text": "Transfer to a wire rack to drain. Sprinkle with salt and aonori and serve.",
+        "timestampSeconds": 46
+      }
+    ],
+    "tags": [
+      "snack",
+      "side dish",
+      "japanese",
+      "potato",
+      "corn",
+      "vegetarian"
+    ],
+    "tagsEnglish": [
+      "snack",
+      "side dish",
+      "japanese",
+      "potato",
+      "corn",
+      "vegetarian"
+    ],
+    "notes": "Cut the potato into small, even pieces and flatten the fritters so they cook through as the outside crisps.",
+    "editorNotes": null,
+    "confidence": {
+      "servings": "low",
+      "totalTimeMinutes": "low",
+      "ingredients.quantity": "low"
+    },
+    "safety": null,
+    "createdVia": "mcp",
+    "reviewStatus": "published",
+    "hiddenAt": null,
+    "createdAt": "2026-10-01T15:56:48.796Z",
+    "updatedAt": "2026-10-01T15:58:30.511Z",
+    "viewCount": 5,
+    "viewCount10d": 7
+  },
+  {
+    "id": "recipe_ulT6A4aLt0cGxwul",
+    "slug": "braised-egg-tofu-with-enoki-mushrooms-and-minced-pork",
+    "title": "Braised Egg Tofu with Enoki Mushrooms and Minced Pork",
+    "sourceUrl": "https://www.youtube.com/shorts/SSPV0-36ReQ",
+    "sourcePlatform": "youtube",
+    "sourceVideoId": "youtube:SSPV0-36ReQ",
+    "creatorHandle": "ufoodulifestyle",
+    "thumbnailUrl": "https://mcp.nourishible.com/thumbnails/de5ba446-1d02-4c71-bd0d-0d15b307dd5e.jpg",
+    "thumbnailWidth": 1254,
+    "thumbnailHeight": 1254,
+    "servings": 2,
+    "totalTimeMinutes": 15,
+    "ingredients": [
+      {
+        "rawText": "4 tubes egg tofu",
+        "quantity": 4,
+        "unit": "tube",
+        "name": "egg tofu",
+        "optional": false,
+        "category": "protein"
+      },
+      {
+        "rawText": "150 g minced pork",
+        "quantity": 150,
+        "unit": "g",
+        "name": "minced pork",
+        "optional": false,
+        "category": "protein"
+      },
+      {
+        "rawText": "2 bunches enoki mushrooms",
+        "quantity": 2,
+        "unit": "bunch",
+        "name": "enoki mushrooms",
+        "optional": false,
+        "category": "produce"
+      },
+      {
+        "rawText": "1 bowl chopped scallions",
+        "quantity": 1,
+        "unit": "bowl",
+        "name": "scallions",
+        "optional": false,
+        "category": "produce"
+      },
+      {
+        "rawText": "3 garlic cloves",
+        "quantity": 3,
+        "unit": "clove",
+        "name": "garlic",
+        "optional": false,
+        "category": "produce"
+      },
+      {
+        "rawText": "Cornstarch, for coating",
+        "quantity": null,
+        "unit": null,
+        "name": "cornstarch",
+        "optional": false,
+        "category": "pantry"
+      },
+      {
+        "rawText": "2 tsp light soy sauce",
+        "quantity": 2,
+        "unit": "tsp",
+        "name": "light soy sauce",
+        "optional": false,
+        "category": "pantry"
+      },
+      {
+        "rawText": "1 tsp dark soy sauce",
+        "quantity": 1,
+        "unit": "tsp",
+        "name": "dark soy sauce",
+        "optional": false,
+        "category": "pantry"
+      },
+      {
+        "rawText": "2 tsp oyster sauce",
+        "quantity": 2,
+        "unit": "tsp",
+        "name": "oyster sauce",
+        "optional": false,
+        "category": "pantry"
+      },
+      {
+        "rawText": "1/2 tsp ground pepper",
+        "quantity": 0.5,
+        "unit": "tsp",
+        "name": "ground pepper",
+        "optional": false,
+        "category": "pantry"
+      },
+      {
+        "rawText": "1 tsp sugar",
+        "quantity": 1,
+        "unit": "tsp",
+        "name": "sugar",
+        "optional": false,
+        "category": "pantry"
+      },
+      {
+        "rawText": "1 tbsp Shaoxing wine",
+        "quantity": 1,
+        "unit": "tbsp",
+        "name": "Shaoxing wine",
+        "optional": false,
+        "category": "pantry"
+      },
+      {
+        "rawText": "2 tbsp water",
+        "quantity": 2,
+        "unit": "tbsp",
+        "name": "water",
+        "optional": false,
+        "category": "other"
+      },
+      {
+        "rawText": "Oil, for frying",
+        "quantity": null,
+        "unit": null,
+        "name": "oil",
+        "optional": false,
+        "category": "pantry"
+      }
+    ],
+    "steps": [
+      {
+        "text": "Mix the light soy sauce, dark soy sauce, oyster sauce, pepper, sugar, Shaoxing wine and water into a sauce.",
+        "timestampSeconds": 8
+      },
+      {
+        "text": "Slice the egg tofu, pat dry and coat with cornstarch. Heat oil in a pan, fry both sides until golden, then set aside.",
+        "timestampSeconds": 15
+      },
+      {
+        "text": "Mince the garlic and fry until fragrant. Add some scallions, the minced pork and enoki mushrooms, and stir-fry until the pork is cooked.",
+        "timestampSeconds": 26
+      },
+      {
+        "text": "Return the tofu to the pan and pour in the sauce. Cover and simmer over low heat for 5 minutes until the sauce reduces.",
+        "timestampSeconds": 44
+      },
+      {
+        "text": "Sprinkle with the remaining scallions and serve.",
+        "timestampSeconds": 50
+      }
+    ],
+    "tags": [
+      "main course",
+      "dinner",
+      "cantonese",
+      "egg tofu",
+      "pork",
+      "enoki mushrooms"
+    ],
+    "tagsEnglish": [
+      "main course",
+      "dinner",
+      "cantonese",
+      "egg tofu",
+      "pork",
+      "enoki mushrooms"
+    ],
+    "notes": "Pan-fry the egg tofu before braising to help it hold its shape. Serve with rice.",
+    "editorNotes": null,
+    "confidence": {},
+    "safety": null,
+    "createdVia": "mcp",
+    "reviewStatus": "published",
+    "hiddenAt": null,
+    "createdAt": "2026-10-01T16:03:05.538Z",
+    "updatedAt": "2026-10-01T16:03:34.953Z",
+    "viewCount": 2,
+    "viewCount10d": 6
+  },
+  {
+    "id": "recipe_Hqi9jdFkOew1v5PB",
+    "slug": "chinese-braised-pork-ribs",
+    "title": "Chinese Braised Pork Ribs",
+    "sourceUrl": "https://www.youtube.com/watch?v=G7a1F_FnZqQ",
+    "sourcePlatform": "youtube",
+    "sourceVideoId": "youtube:G7a1F_FnZqQ",
+    "creatorHandle": "onefoodie",
+    "thumbnailUrl": "https://mcp.nourishible.com/thumbnails/3007aa88-f243-494f-a4b7-d2adea7e4732.jpg",
+    "thumbnailWidth": 1280,
+    "thumbnailHeight": 720,
+    "servings": 3,
+    "totalTimeMinutes": 115,
+    "ingredients": [
+      {
+        "rawText": "Pork ribs",
+        "quantity": null,
+        "unit": null,
+        "name": "pork ribs",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1 spoon salt, for cleaning",
+        "quantity": 1,
+        "unit": "spoon",
+        "name": "salt",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1 small spoon flour, for cleaning",
+        "quantity": 1,
+        "unit": "small spoon",
+        "name": "flour",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "A little white vinegar, for cleaning",
+        "quantity": null,
+        "unit": null,
+        "name": "white vinegar",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Scallions, for blanching, braising and garnish",
+        "quantity": null,
+        "unit": null,
+        "name": "scallions",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Ginger slices for blanching, plus 3 slices for braising",
+        "quantity": null,
+        "unit": null,
+        "name": "ginger",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Cooking wine, for blanching",
+        "quantity": null,
+        "unit": null,
+        "name": "cooking wine",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "2 star anise",
+        "quantity": 2,
+        "unit": null,
+        "name": "star anise",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "8 dried red chilies",
+        "quantity": 8,
+        "unit": null,
+        "name": "dried red chilies",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1 small can beer",
+        "quantity": 1,
+        "unit": "can",
+        "name": "beer",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1 spoon light soy sauce",
+        "quantity": 1,
+        "unit": "spoon",
+        "name": "light soy sauce",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1/2 spoon dark soy sauce",
+        "quantity": 0.5,
+        "unit": "spoon",
+        "name": "dark soy sauce",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1 small spoon oyster sauce",
+        "quantity": 1,
+        "unit": "small spoon",
+        "name": "oyster sauce",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1 spoon sweet bean sauce (tianmianjiang)",
+        "quantity": 1,
+        "unit": "spoon",
+        "name": "sweet bean sauce",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Water, enough to cover the ribs",
+        "quantity": null,
+        "unit": null,
+        "name": "water",
+        "optional": false,
+        "category": null
+      }
+    ],
+    "steps": [
+      {
+        "text": "Toss the ribs with salt, flour and a little white vinegar. Add water, rub gently, then rinse away the flour and drain.",
+        "timestampSeconds": 51
+      },
+      {
+        "text": "Place the ribs in cold water with scallions, ginger and cooking wine. Bring to a boil over medium-low heat, skim the foam, then boil for another 1–2 minutes.",
+        "timestampSeconds": 130
+      },
+      {
+        "text": "Lift out the ribs, rinse in warm water and drain.",
+        "timestampSeconds": 176
+      },
+      {
+        "text": "Put the ribs in a clean pan with 3 ginger slices, a scallion section, star anise, dried chilies, beer, light soy sauce, dark soy sauce, oyster sauce and sweet bean sauce. Add water to cover.",
+        "timestampSeconds": 223
+      },
+      {
+        "text": "Cover, bring to a boil, then reduce to low heat and simmer for 1 1/2 hours until tender.",
+        "timestampSeconds": 264
+      },
+      {
+        "text": "Remove the aromatics during simmering once they have released their flavor. When the ribs are tender, uncover and turn up the heat to reduce the sauce until thick.",
+        "timestampSeconds": 267
+      },
+      {
+        "text": "Plate the ribs, spoon over the sauce and garnish with chopped scallions.",
+        "timestampSeconds": 315
+      }
+    ],
+    "tags": [
+      "main course",
+      "dinner",
+      "chinese",
+      "pork ribs",
+      "braised"
+    ],
+    "tagsEnglish": [
+      "main course",
+      "dinner",
+      "chinese",
+      "pork ribs",
+      "braised"
+    ],
+    "notes": "Reduce the sauce at the end until it coats the ribs. The sweet bean sauce provides color and flavor without caramelizing sugar.",
+    "editorNotes": null,
+    "confidence": {
+      "servings": "low",
+      "totalTimeMinutes": "low",
+      "ingredients.quantity": "medium",
+      "steps[0].timestampSeconds": "medium"
+    },
+    "safety": null,
+    "createdVia": "mcp",
+    "reviewStatus": "published",
+    "hiddenAt": null,
+    "createdAt": "2026-10-01T16:14:59.171Z",
+    "updatedAt": "2026-10-01T16:15:50.522Z",
+    "viewCount": 4,
+    "viewCount10d": 5
+  },
+  {
+    "id": "recipe_IzDQn7H9aadsBRlB",
+    "slug": "stir-fried-cabbage-with-pork-belly-and-soybean-paste",
+    "title": "Stir-Fried Cabbage with Pork Belly and Soybean Paste",
+    "sourceUrl": "https://www.youtube.com/watch?v=RMKruI_eeUY",
+    "sourcePlatform": "youtube",
+    "sourceVideoId": "youtube:RMKruI_eeUY",
+    "creatorHandle": "_TianTianxiangjianchufang",
+    "thumbnailUrl": "https://mcp.nourishible.com/thumbnails/3dfea5a9-5afb-4400-8a8b-9bcbe01b5073.jpg",
+    "thumbnailWidth": 1672,
+    "thumbnailHeight": 941,
+    "servings": 3,
+    "totalTimeMinutes": 25,
+    "ingredients": [
+      {
+        "rawText": "Cabbage, torn into pieces",
+        "quantity": null,
+        "unit": null,
+        "name": "cabbage",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Pork belly, cut into strips",
+        "quantity": null,
+        "unit": null,
+        "name": "pork belly",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Green garlic shoots, stems and leaves separated",
+        "quantity": null,
+        "unit": null,
+        "name": "green garlic",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Scallion whites, chopped",
+        "quantity": null,
+        "unit": null,
+        "name": "scallions",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Ginger, minced",
+        "quantity": null,
+        "unit": null,
+        "name": "ginger",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Garlic, crushed and minced",
+        "quantity": null,
+        "unit": null,
+        "name": "garlic",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Salt, for soaking and seasoning",
+        "quantity": null,
+        "unit": null,
+        "name": "salt",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Oil, a little for the pan",
+        "quantity": null,
+        "unit": null,
+        "name": "oil",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1 spoon soybean paste",
+        "quantity": 1,
+        "unit": "spoon",
+        "name": "soybean paste",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Dark soy sauce, a little for color",
+        "quantity": null,
+        "unit": null,
+        "name": "dark soy sauce",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Water, for soaking",
+        "quantity": null,
+        "unit": null,
+        "name": "water",
+        "optional": false,
+        "category": null
+      }
+    ],
+    "steps": [
+      {
+        "text": "Tear the cabbage into pieces, soak in lightly salted water for 10 minutes, then wash and drain thoroughly.",
+        "timestampSeconds": 51
+      },
+      {
+        "text": "Cut the pork belly into thick slices, then strips. Slice the green garlic stems and leaves separately; chop the scallion whites and mince the ginger and garlic.",
+        "timestampSeconds": 73
+      },
+      {
+        "text": "Heat a little oil in a wok. Add the pork belly and stir-fry over low heat for 2–3 minutes to render its fat, then remove the pork.",
+        "timestampSeconds": 199
+      },
+      {
+        "text": "Stir-fry the cabbage in the pork fat with a little salt until partly cooked and bright in color. Remove and set aside.",
+        "timestampSeconds": 222
+      },
+      {
+        "text": "Fry the scallion whites, ginger and garlic in the remaining oil. Add the pork belly and green garlic stems, then the soybean paste and a little dark soy sauce. Stir-fry until fragrant.",
+        "timestampSeconds": 283
+      },
+      {
+        "text": "Return the cabbage and toss until coated. Keep this final stir-fry within 2 minutes; add the green garlic leaves at the end, toss until cooked and serve.",
+        "timestampSeconds": 315
+      }
+    ],
+    "tags": [
+      "main course",
+      "side dish",
+      "chinese",
+      "cabbage",
+      "pork belly",
+      "stir-fry"
+    ],
+    "tagsEnglish": [
+      "main course",
+      "side dish",
+      "chinese",
+      "cabbage",
+      "pork belly",
+      "stir-fry"
+    ],
+    "notes": "Drain the cabbage thoroughly and keep the final stir-fry brief to retain its crisp texture.",
+    "editorNotes": null,
+    "confidence": {
+      "servings": "low",
+      "totalTimeMinutes": "low",
+      "ingredients.quantity": "low"
+    },
+    "safety": null,
+    "createdVia": "mcp",
+    "reviewStatus": "published",
+    "hiddenAt": null,
+    "createdAt": "2026-10-01T16:25:27.712Z",
+    "updatedAt": "2026-10-01T16:27:27.148Z",
+    "viewCount": 6,
+    "viewCount10d": 4
+  },
+  {
+    "id": "recipe_uW06UD9U7XJBrUNx",
+    "slug": "tomato-and-egg-two-ways",
+    "title": "Tomato and Egg Two Ways",
+    "sourceUrl": "https://www.youtube.com/watch?v=ZkAnIODo2Mg",
+    "sourcePlatform": "youtube",
+    "sourceVideoId": "youtube:ZkAnIODo2Mg",
+    "creatorHandle": "hkhoy",
+    "thumbnailUrl": "https://mcp.nourishible.com/thumbnails/5b83c711-8d88-469b-b7af-63ccf18b5f50.jpg",
+    "thumbnailWidth": 1672,
+    "thumbnailHeight": 941,
+    "servings": null,
+    "totalTimeMinutes": null,
+    "ingredients": [
+      {
+        "rawText": "Version A: 400 g cherry tomatoes, halved",
+        "quantity": 400,
+        "unit": "g",
+        "name": "cherry tomatoes",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version A: 6 eggs, divided into three pairs",
+        "quantity": 6,
+        "unit": null,
+        "name": "eggs",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version A: 200 g sliced onion",
+        "quantity": 200,
+        "unit": "g",
+        "name": "onion",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version A: 200 g chicken stock",
+        "quantity": 200,
+        "unit": "g",
+        "name": "chicken stock",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version A: 20 g chopped scallions",
+        "quantity": 20,
+        "unit": "g",
+        "name": "scallions",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version A: 20 g light soy sauce",
+        "quantity": 20,
+        "unit": "g",
+        "name": "light soy sauce",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version A: 10 g Tabasco",
+        "quantity": 10,
+        "unit": "g",
+        "name": "Tabasco",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version A: salt, to taste",
+        "quantity": null,
+        "unit": null,
+        "name": "salt",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version A: cooking oil, as needed",
+        "quantity": null,
+        "unit": null,
+        "name": "cooking oil",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: 5 medium tomatoes (about 1 kg), divided between chunks and dice",
+        "quantity": 5,
+        "unit": null,
+        "name": "tomatoes",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: 5 eggs",
+        "quantity": 5,
+        "unit": null,
+        "name": "eggs",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: 1 tbsp minced garlic",
+        "quantity": 1,
+        "unit": "tbsp",
+        "name": "garlic",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: 1 tbsp minced ginger",
+        "quantity": 1,
+        "unit": "tbsp",
+        "name": "ginger",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: about 3/4 cup water or stock",
+        "quantity": 0.75,
+        "unit": "cup",
+        "name": "water or stock",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: chopped scallions, to taste",
+        "quantity": null,
+        "unit": null,
+        "name": "scallions",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: 3 tbsp ketchup",
+        "quantity": 3,
+        "unit": "tbsp",
+        "name": "ketchup",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: 3/4 tbsp tomato paste",
+        "quantity": 0.75,
+        "unit": "tbsp",
+        "name": "tomato paste",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: 2 tbsp sugar",
+        "quantity": 2,
+        "unit": "tbsp",
+        "name": "sugar",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: 1/2 tsp salt for the sauce",
+        "quantity": 0.5,
+        "unit": "tsp",
+        "name": "salt",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: 1 tbsp light soy sauce",
+        "quantity": 1,
+        "unit": "tbsp",
+        "name": "light soy sauce",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: pepper, to taste",
+        "quantity": null,
+        "unit": null,
+        "name": "pepper",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: 1 tbsp shallot oil",
+        "quantity": 1,
+        "unit": "tbsp",
+        "name": "shallot oil",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: 1/2 tsp salt for the eggs",
+        "quantity": 0.5,
+        "unit": "tsp",
+        "name": "salt",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: cornstarch slurry, as needed",
+        "quantity": null,
+        "unit": null,
+        "name": "cornstarch slurry",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Version B: cooking oil, as needed",
+        "quantity": null,
+        "unit": null,
+        "name": "cooking oil",
+        "optional": false,
+        "category": null
+      }
+    ],
+    "steps": [
+      {
+        "text": "A — Ricky Cheung: Trim and halve the cherry tomatoes horizontally. Fry two eggs in a little oil until firm, season with salt and set aside.",
+        "timestampSeconds": 223
+      },
+      {
+        "text": "A: Beat two more eggs with salt; scramble over high heat until just set and set aside.",
+        "timestampSeconds": 274
+      },
+      {
+        "text": "A: Slowly cook the sliced onion in oil with a little salt until soft. Add stock and half the tomatoes; cover and cook over medium heat for 3 minutes.",
+        "timestampSeconds": 354
+      },
+      {
+        "text": "A: Quarter the fried eggs. Add these and the scrambled eggs to the tomato sauce with light soy sauce and Tabasco; cook over medium heat for 1 minute.",
+        "timestampSeconds": 522
+      },
+      {
+        "text": "A: Beat the remaining two eggs with salt and pour evenly over the sauce. Arrange the remaining tomatoes on top, season lightly, cover and cook over medium heat for 1 minute until set. Finish with scallions.",
+        "timestampSeconds": 579
+      },
+      {
+        "text": "B — Jacky Yu: Score the tomatoes, blanch for about 20 seconds, cool in ice water and peel. Divide between chunks and small dice.",
+        "timestampSeconds": 844
+      },
+      {
+        "text": "B: Beat five eggs with 1/2 tsp salt. Heat generous oil in a wok, slowly pour in the eggs and fry until fluffy and just set. Remove and drain.",
+        "timestampSeconds": 994
+      },
+      {
+        "text": "B: Fry minced garlic and ginger until fragrant. Add diced tomatoes, soften and mash into a sauce.",
+        "timestampSeconds": 1067
+      },
+      {
+        "text": "B: Add water or stock, tomato chunks, ketchup, tomato paste, sugar, sauce salt, light soy sauce and pepper. Simmer for about 3 minutes until soft.",
+        "timestampSeconds": 1138
+      },
+      {
+        "text": "B: Return the eggs and fold gently. Add a little cornstarch slurry only if needed to glaze the sauce. Finish with shallot oil and scallions.",
+        "timestampSeconds": 1213
+      }
+    ],
+    "tags": [
+      "main course",
+      "cantonese",
+      "tomato",
+      "egg"
+    ],
+    "tagsEnglish": [
+      "main course",
+      "cantonese",
+      "tomato",
+      "egg"
+    ],
+    "notes": "Choose version A (Ricky Cheung's cherry tomatoes with eggs three ways) or version B (Jacky Yu's home-style tomato and egg). Ingredient lines are labeled for each version; they are not intended to be combined.",
+    "editorNotes": null,
+    "confidence": {
+      "ingredients": "high",
+      "steps": "high",
+      "tomatoDivision": "medium",
+      "timestamps": "medium"
+    },
+    "safety": null,
+    "createdVia": "mcp",
+    "reviewStatus": "published",
+    "hiddenAt": null,
+    "createdAt": "2026-10-02T00:40:08.026Z",
+    "updatedAt": "2026-10-02T00:40:32.346Z",
+    "viewCount": 0,
+    "viewCount10d": 3
+  },
+  {
+    "id": "recipe_K4epvHvVUEWU5OnZ",
+    "slug": "steamed-egg-custard-with-minced-pork-sauce",
+    "title": "Steamed Egg Custard with Minced Pork Sauce",
+    "sourceUrl": "https://www.youtube.com/shorts/zluXwWYupAw",
+    "sourcePlatform": "youtube",
+    "sourceVideoId": "youtube:zluXwWYupAw",
+    "creatorHandle": "happycooking-z4i",
+    "thumbnailUrl": "https://mcp.nourishible.com/thumbnails/53553530-a1cc-4f0b-995b-958873da814a.jpg",
+    "thumbnailWidth": 1080,
+    "thumbnailHeight": 1920,
+    "servings": null,
+    "totalTimeMinutes": null,
+    "ingredients": [
+      {
+        "rawText": "Prepared steamed egg custard, in a shallow bowl",
+        "quantity": null,
+        "unit": null,
+        "name": "steamed egg custard",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Minced pork",
+        "quantity": null,
+        "unit": null,
+        "name": "minced pork",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Cooking oil, a little",
+        "quantity": null,
+        "unit": null,
+        "name": "cooking oil",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Sugar, a little",
+        "quantity": null,
+        "unit": null,
+        "name": "sugar",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "White pepper, a little",
+        "quantity": null,
+        "unit": null,
+        "name": "white pepper",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Rice wine",
+        "quantity": null,
+        "unit": null,
+        "name": "rice wine",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Soy sauce, to taste",
+        "quantity": null,
+        "unit": null,
+        "name": "soy sauce",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Water, as needed for the sauce",
+        "quantity": null,
+        "unit": null,
+        "name": "water",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Cornstarch slurry, to thicken",
+        "quantity": null,
+        "unit": null,
+        "name": "cornstarch slurry",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Chopped scallions, for garnish",
+        "quantity": null,
+        "unit": null,
+        "name": "scallions",
+        "optional": false,
+        "category": null
+      }
+    ],
+    "steps": [
+      {
+        "text": "Heat a little oil in a pan. Add minced pork and break it up while frying until cooked through.",
+        "timestampSeconds": 3
+      },
+      {
+        "text": "Add a little sugar and white pepper, then rice wine and soy sauce. Stir-fry to combine.",
+        "timestampSeconds": 6
+      },
+      {
+        "text": "Add water to make a sauce. Stir in cornstarch slurry and simmer until lightly thickened; adjust with a little more soy sauce if needed.",
+        "timestampSeconds": 21
+      },
+      {
+        "text": "Take the prepared steamed egg custard and gently score its surface with a knife so the sauce can seep in.",
+        "timestampSeconds": 34
+      },
+      {
+        "text": "Pour the minced pork sauce over the custard and garnish with chopped scallions. Serve with rice.",
+        "timestampSeconds": 41
+      }
+    ],
+    "tags": [
+      "main course",
+      "egg",
+      "pork"
+    ],
+    "tagsEnglish": [
+      "main course",
+      "egg",
+      "pork"
+    ],
+    "notes": "Use a prepared smooth steamed egg custard as the base. Serve the custard and savory minced pork sauce over rice.",
+    "editorNotes": null,
+    "confidence": {
+      "quantities": "low",
+      "mincedPork": "medium",
+      "custardPreparation": "low",
+      "steps": "high"
+    },
+    "safety": null,
+    "createdVia": "mcp",
+    "reviewStatus": "published",
+    "hiddenAt": null,
+    "createdAt": "2026-10-02T00:46:24.970Z",
+    "updatedAt": "2026-10-02T00:46:43.433Z",
+    "viewCount": 0,
+    "viewCount10d": 2
+  },
+  {
+    "id": "recipe_kgeeljnIvol8LSFx",
+    "slug": "napa-cabbage-and-pan-fried-tofu-claypot",
+    "title": "Napa Cabbage and Pan-Fried Tofu Claypot",
+    "sourceUrl": "https://www.youtube.com/shorts/gNqXX7lKo3I",
+    "sourcePlatform": "youtube",
+    "sourceVideoId": "youtube:gNqXX7lKo3I",
+    "creatorHandle": "happycooking-z4i",
+    "thumbnailUrl": "https://mcp.nourishible.com/thumbnails/ba90d697-37ff-47ff-9573-68978fd45a15.jpg",
+    "thumbnailWidth": 1080,
+    "thumbnailHeight": 1920,
+    "servings": null,
+    "totalTimeMinutes": null,
+    "ingredients": [
+      {
+        "rawText": "Firm tofu, cut into thick squares",
+        "quantity": null,
+        "unit": null,
+        "name": "firm tofu",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Napa cabbage, cut into pieces",
+        "quantity": null,
+        "unit": null,
+        "name": "napa cabbage",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Cooking oil, as needed",
+        "quantity": null,
+        "unit": null,
+        "name": "cooking oil",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Ginger, cut into thin strips",
+        "quantity": null,
+        "unit": null,
+        "name": "ginger",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Shallots, sliced",
+        "quantity": null,
+        "unit": null,
+        "name": "shallots",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Red chili, sliced",
+        "quantity": null,
+        "unit": null,
+        "name": "red chili",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Reduced-salt soy sauce, to taste",
+        "quantity": null,
+        "unit": null,
+        "name": "reduced-salt soy sauce",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Black vinegar, to taste",
+        "quantity": null,
+        "unit": null,
+        "name": "black vinegar",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Rice wine",
+        "quantity": null,
+        "unit": null,
+        "name": "rice wine",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Water, as needed",
+        "quantity": null,
+        "unit": null,
+        "name": "water",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "White pepper, to taste",
+        "quantity": null,
+        "unit": null,
+        "name": "white pepper",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Cornstarch slurry, to thicken",
+        "quantity": null,
+        "unit": null,
+        "name": "cornstarch slurry",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Chopped scallions, for garnish",
+        "quantity": null,
+        "unit": null,
+        "name": "scallions",
+        "optional": false,
+        "category": null
+      }
+    ],
+    "steps": [
+      {
+        "text": "Heat oil in a frying pan. Pan-fry the tofu squares until golden on both sides; set aside.",
+        "timestampSeconds": 3
+      },
+      {
+        "text": "Heat a little oil in a claypot. Fry the ginger strips, sliced shallots and red chili until fragrant.",
+        "timestampSeconds": 12
+      },
+      {
+        "text": "Add napa cabbage and stir. Add reduced-salt soy sauce, black vinegar and rice wine, then water. Cover and simmer until the cabbage begins to soften.",
+        "timestampSeconds": 16
+      },
+      {
+        "text": "Arrange the fried tofu on top. Cover again and simmer until the cabbage is tender and the tofu has absorbed the sauce.",
+        "timestampSeconds": 33
+      },
+      {
+        "text": "Season with white pepper. Stir in a little cornstarch slurry to lightly thicken the bubbling sauce.",
+        "timestampSeconds": 40
+      },
+      {
+        "text": "Scatter chopped scallions over the top and serve hot.",
+        "timestampSeconds": 46
+      }
+    ],
+    "tags": [
+      "main course",
+      "tofu",
+      "napa cabbage",
+      "vegetarian"
+    ],
+    "tagsEnglish": [
+      "main course",
+      "tofu",
+      "napa cabbage",
+      "vegetarian"
+    ],
+    "notes": "Brown the tofu before adding it to the cabbage so it holds its shape and absorbs the sauce.",
+    "editorNotes": null,
+    "confidence": {
+      "quantities": "low",
+      "ginger": "medium",
+      "shallots": "medium",
+      "redChili": "medium",
+      "whitePepper": "medium",
+      "steps": "high"
+    },
+    "safety": null,
+    "createdVia": "mcp",
+    "reviewStatus": "published",
+    "hiddenAt": null,
+    "createdAt": "2026-10-02T00:50:08.827Z",
+    "updatedAt": "2026-10-02T00:50:20.920Z",
+    "viewCount": 0,
+    "viewCount10d": 1
+  },
+  {
+    "id": "recipe_fSZIzK8O5vqgK1rF",
+    "slug": "braised-winter-melon-with-dried-shrimp",
+    "title": "Braised Winter Melon with Dried Shrimp",
+    "sourceUrl": "https://www.youtube.com/shorts/1UKsr42hsQw",
+    "sourcePlatform": "youtube",
+    "sourceVideoId": "youtube:1UKsr42hsQw",
+    "creatorHandle": "GloriaKitchen貞姨姨廚房",
+    "thumbnailUrl": "https://mcp.nourishible.com/thumbnails/20693ecd-016a-44c2-960c-3f4a219617c8.jpg",
+    "thumbnailWidth": 941,
+    "thumbnailHeight": 1672,
+    "servings": 2,
+    "totalTimeMinutes": 25,
+    "ingredients": [
+      {
+        "rawText": "1 catty winter melon, peeled, deseeded and diced",
+        "quantity": 1,
+        "unit": "catty",
+        "name": "winter melon",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "2 tbsp dried shrimp, soaked until soft; reserve soaking water",
+        "quantity": 2,
+        "unit": "tbsp",
+        "name": "dried shrimp",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "2 slices ginger",
+        "quantity": 2,
+        "unit": "slice",
+        "name": "ginger",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "2 cloves garlic",
+        "quantity": 2,
+        "unit": "clove",
+        "name": "garlic",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1 tsp salt, added after the melon softens",
+        "quantity": 1,
+        "unit": "tsp",
+        "name": "salt",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1/4 tsp sugar",
+        "quantity": 0.25,
+        "unit": "tsp",
+        "name": "sugar",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1 tsp light soy sauce",
+        "quantity": 1,
+        "unit": "tsp",
+        "name": "light soy sauce",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1 tsp oyster sauce",
+        "quantity": 1,
+        "unit": "tsp",
+        "name": "oyster sauce",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1 tsp cornstarch for the slurry",
+        "quantity": 1,
+        "unit": "tsp",
+        "name": "cornstarch",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "1 tsp water for the slurry, plus water to soak the shrimp",
+        "quantity": 1,
+        "unit": "tsp",
+        "name": "water",
+        "optional": false,
+        "category": null
+      },
+      {
+        "rawText": "Cooking oil, as needed to fry the aromatics",
+        "quantity": null,
+        "unit": null,
+        "name": "cooking oil",
+        "optional": false,
+        "category": null
+      }
+    ],
+    "steps": [
+      {
+        "text": "Peel and deseed the winter melon and cut into cubes. Soak the dried shrimp until softened, reserving their soaking water.",
+        "timestampSeconds": null
+      },
+      {
+        "text": "Mix 1 tsp cornstarch with 1 tsp water to make a slurry.",
+        "timestampSeconds": null
+      },
+      {
+        "text": "Heat a little oil and fry the ginger, garlic and softened dried shrimp until fragrant.",
+        "timestampSeconds": null
+      },
+      {
+        "text": "Add the winter melon and stir to combine. Pour in the reserved shrimp soaking water, cover and braise over medium heat for 5–8 minutes, until the melon is translucent and tender.",
+        "timestampSeconds": null
+      },
+      {
+        "text": "Add the salt, sugar, light soy sauce and oyster sauce only after the melon has softened, and mix well.",
+        "timestampSeconds": null
+      },
+      {
+        "text": "Stir the slurry again, pour it into the pan and simmer until the sauce thickens. Serve hot.",
+        "timestampSeconds": null
+      }
+    ],
+    "tags": [
+      "side dish",
+      "cantonese",
+      "winter melon",
+      "dried shrimp"
+    ],
+    "tagsEnglish": [
+      "side dish",
+      "cantonese",
+      "winter melon",
+      "dried shrimp"
+    ],
+    "notes": "Serves 2–3. Add the seasonings after the winter melon softens to preserve its natural sweetness.",
+    "editorNotes": null,
+    "confidence": {
+      "ingredients": "high",
+      "quantities": "high",
+      "steps": "high",
+      "servings": "high",
+      "supportingRecipeMatch": "high"
+    },
+    "safety": null,
+    "createdVia": "mcp",
+    "reviewStatus": "published",
+    "hiddenAt": null,
+    "createdAt": "2026-10-02T00:57:59.735Z",
+    "updatedAt": "2026-10-02T00:58:14.242Z",
+    "viewCount": 0,
+    "viewCount10d": 0
+  }
+]

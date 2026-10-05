@@ -1,0 +1,127 @@
+{
+  "title": "Stir-Fried Cabbage with Pork Belly and Soybean Paste",
+  "creatorHandle": "_TianTianxiangjianchufang",
+  "sourceUrl": "https://www.youtube.com/watch?v=RMKruI_eeUY",
+  "sourcePlatform": "youtube",
+  "servings": 3,
+  "totalTimeMinutes": 25,
+  "ingredients": [
+    {
+      "rawText": "Cabbage, torn into pieces",
+      "name": "cabbage",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Pork belly, cut into strips",
+      "name": "pork belly",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Green garlic shoots, stems and leaves separated",
+      "name": "green garlic",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Scallion whites, chopped",
+      "name": "scallions",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Ginger, minced",
+      "name": "ginger",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Garlic, crushed and minced",
+      "name": "garlic",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Salt, for soaking and seasoning",
+      "name": "salt",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Oil, a little for the pan",
+      "name": "oil",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "1 spoon soybean paste",
+      "name": "soybean paste",
+      "quantity": 1,
+      "unit": "spoon",
+      "optional": false
+    },
+    {
+      "rawText": "Dark soy sauce, a little for color",
+      "name": "dark soy sauce",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    },
+    {
+      "rawText": "Water, for soaking",
+      "name": "water",
+      "quantity": null,
+      "unit": null,
+      "optional": false
+    }
+  ],
+  "steps": [
+    {
+      "text": "Tear the cabbage into pieces, soak in lightly salted water for 10 minutes, then wash and drain thoroughly.",
+      "timestampSeconds": 51
+    },
+    {
+      "text": "Cut the pork belly into thick slices, then strips. Slice the green garlic stems and leaves separately; chop the scallion whites and mince the ginger and garlic.",
+      "timestampSeconds": 73
+    },
+    {
+      "text": "Heat a little oil in a wok. Add the pork belly and stir-fry over low heat for 2–3 minutes to render its fat, then remove the pork.",
+      "timestampSeconds": 199
+    },
+    {
+      "text": "Stir-fry the cabbage in the pork fat with a little salt until partly cooked and bright in color. Remove and set aside.",
+      "timestampSeconds": 222
+    },
+    {
+      "text": "Fry the scallion whites, ginger and garlic in the remaining oil. Add the pork belly and green garlic stems, then the soybean paste and a little dark soy sauce. Stir-fry until fragrant.",
+      "timestampSeconds": 283
+    },
+    {
+      "text": "Return the cabbage and toss until coated. Keep this final stir-fry within 2 minutes; add the green garlic leaves at the end, toss until cooked and serve.",
+      "timestampSeconds": 315
+    }
+  ],
+  "tags": [
+    "main course",
+    "side dish",
+    "chinese",
+    "cabbage",
+    "pork belly",
+    "stir-fry"
+  ],
+  "notes": "Drain the cabbage thoroughly and keep the final stir-fry brief to retain its crisp texture.",
+  "confidence": {
+    "servings": "low",
+    "totalTimeMinutes": "low",
+    "ingredients.quantity": "low"
+  }
+}
