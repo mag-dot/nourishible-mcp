@@ -683,6 +683,19 @@ detail agree — and note that path has no video file to re-grab from, so its sc
 under 512px wide** (the server rejects it too) and re-grab before picking again; don't
 persist a low-res frame just because it's the best-composed one available.
 
+**The thumbnail carries no text.** Prefer a frame without a caption, title card or
+watermark, but a good finished-dish shot with the creator's title stamped across it still
+beats a worse frame. When your #1 pick has on-screen text over the food, remove it before
+you upload: open the `thumb_*.jpg`, note a pixel box around the text, and run
+
+```bash
+python3 "$SKILL_DIR/scripts/remove_text.py" thumb_X.jpg thumb_X_clean.jpg --box x0,y0,x1,y1
+```
+
+then open the result and check only the dish remains (no ghost letters, no smeared
+patch). Upload the cleaned file. This replaces the "minor caption is fine" allowance in
+criterion 1 for the #1 pick; #2/#3 candidates are not cleaned.
+
 Record your #1 pick's `thumb_*.jpg` path — that's the one to persist as the recipe's
 thumbnail in Step 6.5 below. Pass #2 and #3's frame paths to `save_recipe`/`update_recipe`
 as thumbnail candidates too (see Step 6.5) — nourishible keeps them as a 60-day reviewable
