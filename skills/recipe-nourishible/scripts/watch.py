@@ -31,6 +31,19 @@ from frames import MAX_FPS, auto_fps, auto_fps_focus, extract_at_timestamps, ext
 from transcribe import filter_range, format_transcript, parse_vtt  # noqa: E402
 from whisper import load_api_key, transcribe_video  # noqa: E402
 
+# Descriptions can run to thousands of characters (links, hashtags, channel
+# boilerplate); the ingredient list is near the top, so cap what the report
+# prints and point at video.info.json for the rest.
+DESCRIPTION_MAX_CHARS = 4000
+
+# End-card frames only make sense on a video long enough to have an outro.
+ENDCARD_MIN_DURATION = 180
+# Three frames spread across the final 90 seconds. The last one sits ~5s
+# before the end, not 15s: the ingredient summary card, when there is one,
+# is usually the very last thing on screen (verified on a real video: the
+# card appears in the final ~10 seconds, and a 15s offset missed it).
+ENDCARD_OFFSETS = (75, 45, 5)
+
 
 def report_xhs_photo_note(url: str, work: Path) -> int:
     """Report path for a Xiaohongshu photo/图文 note — no video, so none of
@@ -204,6 +217,9 @@ def main() -> int:
     transcript_segments: list[dict] = []
     transcript_text: str | None = None
     transcript_source: str | None = None
+    native_segments: list[dict] = []
+    native_transcript_text: str | None = None
+    native_language: str | None = None
     video_path: str | None = None
 
     if url_source:
@@ -222,6 +238,14 @@ def main() -> int:
             except Exception as exc:
                 print(f"[watch] subtitle parse failed: {exc}", file=sys.stderr)
                 transcript_segments = []
+        if dl.get("native_subtitle_path"):
+            try:
+                native_segments = parse_vtt(dl["native_subtitle_path"])
+                native_transcript_text = format_transcript(native_segments)
+                native_language = (dl.get("info") or {}).get("language")
+            except Exception as exc:
+                print(f"[watch] native subtitle parse failed: {exc}", file=sys.stderr)
+                native_segments = []
 
     # --timestamps needs the video for frame grabs, so it overrides the
     # transcript-mode download skip (and forces a full, not audio-only, fetch).
@@ -384,6 +408,35 @@ def main() -> int:
         }
         print(f"[watch] using thumbnail fallback frame: {dest}", file=sys.stderr)
 
+    # End-card frames: many creators end on a static ingredient/quantity
+    # card, and the reading pass samples the whole video sparsely, so that
+    # card is easy to miss. Pin three frames from the final 90 seconds so
+    # the agent can check them for the ingredient list. Skipped on short
+    # videos (no outro to speak of), transcript-only runs (no video file),
+    # and focused runs that don't reach the end.
+    endcard_frames: list[dict] = []
+    if (
+        video_path
+        and full_duration > ENDCARD_MIN_DURATION
+        and detail != "transcript"
+        and (not focused or effective_end >= full_duration - 1)
+    ):
+        endcard_times = [
+            t for t in (full_duration - off for off in ENDCARD_OFFSETS) if t >= 0
+        ]
+        try:
+            endcard_frames, _endcard_meta = extract_at_timestamps(
+                video_path,
+                work / "frames",
+                endcard_times,
+                resolution=args.resolution,
+                prefix="endcard",
+                reason="end-card",
+            )
+        except SystemExit as exc:
+            print(f"[watch] end-card extraction failed: {exc}", file=sys.stderr)
+            endcard_frames = []
+
     if not transcript_segments and dl.get("subtitle_path"):
         try:
             all_segments = parse_vtt(dl["subtitle_path"])
@@ -392,6 +445,16 @@ def main() -> int:
             transcript_source = "captions"
         except Exception as exc:
             print(f"[watch] subtitle parse failed: {exc}", file=sys.stderr)
+
+    if not native_transcript_text and dl.get("native_subtitle_path"):
+        try:
+            all_native = parse_vtt(dl["native_subtitle_path"])
+            native_segments = filter_range(all_native, start_sec, end_sec) if focused else all_native
+            native_transcript_text = format_transcript(native_segments)
+            native_language = (dl.get("info") or {}).get("language")
+        except Exception as exc:
+            print(f"[watch] native subtitle parse failed: {exc}", file=sys.stderr)
+            native_segments = []
 
     if not transcript_segments and not args.no_whisper and video_path and meta.get("has_audio"):
         backend, api_key = load_api_key(args.whisper)
@@ -472,6 +535,13 @@ def main() -> int:
         )
     else:
         print("- **Transcript:** none available")
+    if native_transcript_text:
+        print(
+            f"- **Transcript (original, {native_language or 'unknown language'}):** "
+            f"{len(native_segments)} segments"
+        )
+    if endcard_frames:
+        print(f"- **End card:** {len(endcard_frames)} frames from the final 90 seconds")
 
     if detail == "token-burner" and len(frames) > 250:
         print()
@@ -518,6 +588,22 @@ def main() -> int:
     else:
         print("_No frames extracted._")
 
+    if endcard_frames:
+        print()
+        print("## End card")
+        print()
+        print(
+            "Frames from the final 90 seconds — check these for an on-screen "
+            "ingredient/quantity summary. Many creators end on a static card with "
+            "the full list; if it's there, it outranks the transcript for quantities."
+        )
+        print()
+        for frame in endcard_frames:
+            print(
+                f"- `{frame['path']}` "
+                f"(t={format_time(frame['timestamp_seconds'])}, reason={frame.get('reason', 'end-card')})"
+            )
+
     print()
     print("## Transcript")
     print()
@@ -547,6 +633,46 @@ def main() -> int:
             "(no API key set, or `--no-whisper` was used). "
             f"Run `python3 {setup_py}` to enable Whisper, then re-run._"
         )
+
+    if native_transcript_text:
+        print()
+        lang_label = f" (original language{', ' + native_language if native_language else ''})"
+        print(f"## Transcript{lang_label}")
+        print()
+        print(
+            "_Same video, original-language captions — use it to cross-check the "
+            "English transcript, especially quantities and ingredient names, which "
+            "auto-translation can garble._"
+        )
+        print()
+        print("```")
+        print(native_transcript_text)
+        print("```")
+
+    print()
+    print("## Description")
+    print()
+    description = ((info.get("description") or "").strip())
+    if description:
+        print(
+            "_The video's own description — treat it as a first-class source, "
+            "same as the transcript. It frequently contains the complete "
+            "ingredient/step text, sometimes more complete than what's shown on "
+            "any single frame or spoken aloud._"
+        )
+        print()
+        print("```")
+        if len(description) > DESCRIPTION_MAX_CHARS:
+            print(description[:DESCRIPTION_MAX_CHARS])
+            print(
+                f"[... truncated: {len(description) - DESCRIPTION_MAX_CHARS} more "
+                "characters — full text in video.info.json]"
+            )
+        else:
+            print(description)
+        print("```")
+    else:
+        print("_No description text on this video._")
 
     print()
     print("---")

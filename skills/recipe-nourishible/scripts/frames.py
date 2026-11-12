@@ -726,6 +726,9 @@ def extract_scene_or_uniform(
 CANDIDATE_RANK_FPS = 1.0
 CANDIDATE_SCALE_WIDTH = 320
 DEFAULT_CANDIDATE_COUNT = 12
+# The plated shot usually lives in the last fifth of a recipe video, so
+# --find-plating scores just that window instead of the whole timeline.
+PLATING_FRACTION = 0.2
 _METRIC_RE = re.compile(r"lavfi\.(?:signalstats\.)?(\w+)=(-?[0-9.]+)")
 _FRAME_TS_RE = re.compile(r"frame:\d+\s+pts:\S+\s+pts_time:([0-9.]+)")
 
@@ -969,7 +972,7 @@ if __name__ == "__main__":
             "usage: frames.py <video-path> <out-dir> [--fps F] [--resolution W] "
             "[--max-frames N] [--start T] [--end T] [--no-dedup] "
             "[--thumbnail-at T] [--thumbnail-resolution W] "
-            "[--rank-candidates] [--candidates N] [--rank-fps F] "
+            "[--rank-candidates] [--find-plating] [--candidates N] [--rank-fps F] "
             "[--timestamps T1,T2,...] [--candidate-resolution W]",
             file=sys.stderr,
         )
@@ -988,6 +991,7 @@ if __name__ == "__main__":
     thumbnail_at_arg: str | None = None
     thumbnail_resolution: int | None = None
     rank_candidates = False
+    find_plating = False
     candidate_count = DEFAULT_CANDIDATE_COUNT
     rank_fps = CANDIDATE_RANK_FPS
     timestamps_arg: str | None = None
@@ -1012,6 +1016,8 @@ if __name__ == "__main__":
             thumbnail_resolution = int(args[i + 1]); i += 2
         elif args[i] == "--rank-candidates":
             rank_candidates = True; i += 1
+        elif args[i] == "--find-plating":
+            find_plating = True; i += 1
         elif args[i] == "--candidates":
             candidate_count = int(args[i + 1]); i += 2
         elif args[i] == "--rank-fps":
@@ -1045,6 +1051,42 @@ if __name__ == "__main__":
                 "ranked pick. Pixel statistics cannot distinguish a finished dish from "
                 "raw ingredients; read the shortlist and choose, then re-grab your pick "
                 "at full resolution with --thumbnail-at."
+            ),
+        }, indent=2))
+        raise SystemExit(0)
+
+    # Score just the last fifth of the video, where the plated shot usually
+    # lives. Same ranker as --rank-candidates, narrower window: it answers
+    # the only question the thumbnail pick actually asks ("is there a clean
+    # finished dish?") without scoring the whole timeline. An explicit
+    # --start/--end overrides the window; otherwise it's the last
+    # PLATING_FRACTION of the video.
+    if find_plating:
+        meta = get_metadata(video)
+        duration = meta["duration_seconds"]
+        start_sec = parse_time(start_arg)
+        end_sec = parse_time(end_arg)
+        window_label = "explicit --start/--end window"
+        if start_sec is None and end_sec is None:
+            start_sec = max(0.0, duration * (1 - PLATING_FRACTION))
+            end_sec = duration
+            window_label = f"last {int(PLATING_FRACTION * 100)}% of the video"
+        scored = score_candidate_frames(
+            video, rank_fps=rank_fps, start_seconds=start_sec, end_seconds=end_sec,
+        )
+        shortlist = rank_thumbnail_candidates(scored, count=candidate_count)
+        print(json.dumps({
+            "window": window_label,
+            "start_seconds": start_sec,
+            "end_seconds": end_sec,
+            "scored_frames": len(scored),
+            "candidates": shortlist,
+            "note": (
+                "Technical quality only — these are frames worth looking at, not a "
+                "ranked pick. Read the shortlist (grab it with --timestamps) and "
+                "choose the finished dish yourself, then re-grab your pick at full "
+                "resolution with --thumbnail-at. If this comes back empty, fall back "
+                "to a full-timeline --rank-candidates."
             ),
         }, indent=2))
         raise SystemExit(0)
