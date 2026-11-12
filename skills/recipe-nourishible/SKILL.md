@@ -430,13 +430,19 @@ have three evidence streams to reconcile:
 
 1. **Frames** — what's visually on screen, including any on-screen text overlays
    (ingredient lists, quantities, step callouts, timers). Read the overlay text directly
-   off the image — don't guess if it's legible.
+   off the image — don't guess if it's legible. The **end-card frames** (the report's
+   `## End card` section, three frames from the final 90 seconds) get the same
+   treatment: many creators end on a static ingredient/quantity card, and if it's
+   there it outranks the transcript for quantities.
 2. **Transcript** — what's spoken, with timestamps (`captions` = native, `whisper (...)` =
-   transcribed — the report header says which).
+   transcribed — the report header says which). When the report also prints a
+   **Transcript (original language)** section, cross-check the English one against it,
+   especially quantities and ingredient names — auto-translation can garble both.
 3. **Caption/description text** — if the source is Instagram, `caption.txt` from the
    capture directory very often contains the full ingredient list as plain text, sometimes
-   *more* complete than what's shown on screen or said aloud. Treat it as a first-class
-   source, not an afterthought.
+   *more* complete than what's shown on screen or said aloud. Same for a video's
+   **Description** section in the report: creators often paste the complete
+   ingredient list there. Treat both as first-class sources, not afterthoughts.
 
 ## Step 3 — structure the recipe
 
@@ -638,18 +644,25 @@ alone. On a 1080×1920 reel that's a native 1080×1920 grab — roughly ten time
 detail of the reading frame you ranked. **This grab, not the reading frame, is what Step 6.5
 encodes and uploads.**
 
-**If none of the frames you read is a clean finished-dish shot, search the full timeline
-before settling.** The reading pass samples perhaps 80 frames; the video has thousands, and
-the plated shot is often a brief held moment between two of them. This costs no image
-tokens — it scores frames with ffmpeg locally:
+**If none of the frames you read is a clean finished-dish shot, search the end of the
+video before settling.** The reading pass samples perhaps 80 frames; the video has
+thousands, and the plated shot is often a brief held moment between two of them. This
+costs no image tokens — it scores frames with ffmpeg locally. Start with the last 20%,
+where the plated shot usually lives:
+
+```bash
+python3 "$FRAMES_SCRIPT" "$VIDEO_PATH" "$OUT_DIR" --find-plating
+```
+
+It returns up to 12 timestamps: the sharpest correctly-exposed frame in each slice of
+that window, each with a `sharpness` score from 0 to 1 (1 = the sharpest frame in this
+video). If that comes back empty, fall back to the full timeline:
 
 ```bash
 python3 "$FRAMES_SCRIPT" "$VIDEO_PATH" "$OUT_DIR" --rank-candidates
 ```
 
-It returns up to 12 timestamps: the sharpest correctly-exposed frame in each slice of the
-timeline, each with a `sharpness` score from 0 to 1 (1 = the sharpest frame in this video).
-On a 6-minute video it scores 353 frames in about 6 seconds. Then grab that shortlist in
+On a 6-minute video the full pass scores 353 frames in about 6 seconds. Then grab that shortlist in
 **one** call and read it:
 
 ```bash
@@ -710,14 +723,23 @@ persist a low-res frame just because it's the best-composed one available.
 **The thumbnail carries no text.** Prefer a frame without a caption, title card or
 watermark, but a good finished-dish shot with the creator's title stamped across it still
 beats a worse frame. When your #1 pick has on-screen text over the food, remove it before
-you upload: open the `thumb_*.jpg`, note a pixel box around the text, and run
+you upload — try the automatic pass first:
+
+```bash
+python3 "$SKILL_DIR/scripts/remove_text.py" thumb_X.jpg thumb_X_clean.jpg --auto
+```
+
+It detects caption/logo text in the top and bottom bands and inpaints it (dark logos
+get filled wholesale). It prints the boxes it found — open the result and check only the
+dish remains (no ghost letters, no smeared patch, no food erased). If it misses text, or
+masks food instead of text, measure a pixel box around the text by hand and run the
+manual form instead:
 
 ```bash
 python3 "$SKILL_DIR/scripts/remove_text.py" thumb_X.jpg thumb_X_clean.jpg --box x0,y0,x1,y1
 ```
 
-then open the result and check only the dish remains (no ghost letters, no smeared
-patch). Upload the cleaned file. This replaces the "minor caption is fine" allowance in
+Upload the cleaned file. This replaces the "minor caption is fine" allowance in
 criterion 1 for the #1 pick; #2/#3 candidates are not cleaned.
 
 Record your #1 pick's `thumb_*.jpg` path — that's the one to persist as the recipe's

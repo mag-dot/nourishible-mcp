@@ -207,15 +207,79 @@ def resolve_local(path: str) -> dict:
     }
 
 
-def _pick_subtitle(out_dir: Path) -> Path | None:
+ENGLISH_SUB_LANGS = "en,en-US,en-GB,en-orig"
+
+# Spoken vs written codes diverge for Chinese: the audio is Cantonese
+# ("yue") but the caption track is usually Traditional Chinese ("zh-HK" /
+# "zh-Hant"). Map a video language to the caption codes worth requesting, in
+# preference order. Anything not listed here just uses its own code.
+_NATIVE_CAPTION_CODES = {
+    "yue": ("yue", "zh-HK", "zh-Hant", "zh-TW", "zh"),
+    "zh": ("zh-HK", "zh-Hant", "zh-TW", "zh-Hans", "zh", "yue"),
+}
+
+
+def native_caption_codes(language: str | None) -> list[str]:
+    """Caption language codes to try for a video in `language` (its
+    yt-dlp `language` field, e.g. "yue" for Cantonese audio)."""
+    if not language:
+        return []
+    lang = language.lower()
+    if lang in _NATIVE_CAPTION_CODES:
+        return list(_NATIVE_CAPTION_CODES[lang])
+    base = lang.split("-")[0]
+    return [lang] if lang == base else [lang, base]
+
+
+def sub_langs(native_language: str | None = None) -> str:
+    """`--sub-langs` value: English plus the video's own language, so the
+    original-language captions come down next to the English ones instead of
+    English only. Deliberately not "all": a video can carry 400+ auto-
+    translated caption tracks, and only the original is worth reading."""
+    langs = [ENGLISH_SUB_LANGS]
+    for code in native_caption_codes(native_language):
+        if code.lower().startswith("en"):
+            continue
+        langs.append(code)
+    return ",".join(langs)
+
+
+def _pick_subtitles(
+    out_dir: Path, native_language: str | None = None,
+) -> tuple[Path | None, Path | None]:
+    """(English subtitle, original-language subtitle) from the VTTs on disk.
+
+    English is picked exactly as before; the native pick prefers the video's
+    own language (with the yue/zh mapping above), then any other non-English
+    track — a creator-uploaded subtitle in an unexpected code is still the
+    original wording, and still beats no native track at all.
+    """
     candidates = sorted(out_dir.glob("video*.vtt"))
     if not candidates:
-        return None
+        return None, None
     preferred = [
         c for c in candidates
         if any(marker in c.name for marker in (".en.", ".en-US.", ".en-GB.", ".en-orig."))
     ]
-    return preferred[0] if preferred else candidates[0]
+    english = preferred[0] if preferred else candidates[0]
+    rest = [c for c in candidates if c is not english]
+    native = None
+    for code in native_caption_codes(native_language):
+        hit = [c for c in rest if f".{code}." in c.name]
+        if hit:
+            native = hit[0]
+            break
+    if native is None:
+        non_english = [
+            c for c in rest
+            if not any(marker in c.name for marker in (".en.", ".en-US.", ".en-GB.", ".en-orig."))
+        ]
+        native = non_english[0] if non_english else None
+    return english, native
+
+
+def _pick_subtitle(out_dir: Path) -> Path | None:
+    return _pick_subtitles(out_dir)[0]
 
 
 def _pick_video(out_dir: Path) -> Path | None:
@@ -239,6 +303,30 @@ def fetch_captions(
         raise SystemExit("yt-dlp is not installed. Install with: brew install yt-dlp")
 
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Pass 1 — metadata only, so the video's own language is known before
+    # asking for captions. Cheap (no media), and it is what lets pass 2
+    # request the original-language track instead of English only.
+    native_language = None
+    meta_cmd = [
+        "yt-dlp",
+        "--skip-download",
+        "--write-info-json",
+        "--no-playlist",
+        "--ignore-errors",
+        *_cookie_args(cookies_from_browser, cookies_file),
+        "-o", str(out_dir / "video.%(ext)s"),
+        "--",
+        url,
+    ]
+    meta_result = subprocess.run(meta_cmd, stdout=sys.stderr, stderr=sys.stderr)
+    if meta_result.returncode == 0:
+        native_language = _read_info(out_dir / "video.info.json", url).get("language")
+
+    # Pass 2 — captions in English plus the original language. The native
+    # track is the cross-check for the English one: auto-translation can
+    # garble quantities and ingredient names, and the original is what the
+    # creator actually said or wrote.
     output_template = str(out_dir / "video.%(ext)s")
     cmd = [
         "yt-dlp",
@@ -246,7 +334,7 @@ def fetch_captions(
         "--write-info-json",
         "--write-subs",
         "--write-auto-subs",
-        "--sub-langs", "en,en-US,en-GB,en-orig",
+        "--sub-langs", sub_langs(native_language),
         "--sub-format", "vtt",
         "--convert-subs", "vtt",
         "--no-playlist",
@@ -257,11 +345,11 @@ def fetch_captions(
         url,
     ]
     result = subprocess.run(cmd, stdout=sys.stderr, stderr=sys.stderr)
-    subtitle = _pick_subtitle(out_dir)
+    english, native = _pick_subtitles(out_dir, native_language)
     info = _read_info(out_dir / "video.info.json", url)
     if (
         result.returncode != 0
-        and not subtitle
+        and not english
         and is_login_sensitive(url)
         and not (cookies_from_browser or cookies_file)
     ):
@@ -273,7 +361,10 @@ def fetch_captions(
         )
     return {
         "video_path": None,
-        "subtitle_path": str(subtitle) if subtitle else None,
+        "subtitle_path": str(english) if english else None,
+        # The native track is already on disk when the video download runs
+        # (same out_dir), so download_url picks it up from there too.
+        "native_subtitle_path": str(native) if native else None,
         "info": info or {"url": url},
         "downloaded": False,
     }
@@ -289,6 +380,12 @@ def _read_info(info_path: Path, url: str) -> dict:
                 "uploader": raw.get("uploader") or raw.get("channel"),
                 "duration": raw.get("duration"),
                 "url": raw.get("webpage_url") or url,
+                # The description is a first-class source for the recipe
+                # itself (creators often paste the full ingredient list
+                # there), and `language` is what the native-caption pick
+                # below matches against — both used to be dropped here.
+                "description": raw.get("description"),
+                "language": raw.get("language"),
             }
         except Exception as exc:
             print(f"[watch] info.json parse failed: {exc}", file=sys.stderr)
@@ -413,11 +510,15 @@ def download_url(
         last_error = err
         video = _pick_video(out_dir)
         if video is not None:
-            subtitle = _pick_subtitle(out_dir)
             info = _read_info(out_dir / "video.info.json", url)
+            # The native track was fetched by fetch_captions into this same
+            # out_dir; this call only re-fetches English, so pick up both
+            # from whatever VTTs are on disk.
+            english, native = _pick_subtitles(out_dir, info.get("language"))
             return {
                 "video_path": str(video),
-                "subtitle_path": str(subtitle) if subtitle else None,
+                "subtitle_path": str(english) if english else None,
+                "native_subtitle_path": str(native) if native else None,
                 "info": info or {"url": url},
                 "downloaded": True,
             }
